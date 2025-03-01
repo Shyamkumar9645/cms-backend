@@ -30,10 +30,16 @@ public class JwtTokenProvider {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
 
+        // Safely get the first authority or provide a default
+        String role = userDetails.getAuthorities().stream()
+                .findFirst()
+                .map(grantedAuthority -> grantedAuthority.getAuthority())
+                .orElse("ROLE_USER"); // Default role if no authority is found
+
         return Jwts.builder()
                 .setSubject(userDetails.getUsername())
-                .claim("role", userDetails.getAuthorities().iterator().next().getAuthority())
-                .setIssuedAt(new Date())
+                .claim("role", role)
+                .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(secretKey)
                 .compact();
