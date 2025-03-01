@@ -2,7 +2,8 @@ package com.cms.cms.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import org.springframework.context.annotation.Role;
+// Remove this incorrect import
+// import org.springframework.context.annotation.Role;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -30,11 +31,9 @@ public class User {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
-    private Set<Role> roles; // Ensure this exists
+    private Set<Role> roles; // Using your custom Role class
 
     public Set<Role> getRoles() {
-        return roles; // Return roles
+        return roles;
     }
 }
-
-
