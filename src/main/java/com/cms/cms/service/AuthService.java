@@ -42,10 +42,10 @@ public class AuthService {
         user.setEmail(signupRequest.getEmail());
         user.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
 
-        Set<org.springframework.context.annotation.Role> roles = new HashSet<>();
+        Set<Role> roles = new HashSet<>();
         Role userRole = roleRepository.findByName("ROLE_USER")
                 .orElseThrow(() -> new RuntimeException("Error: Role not found."));
-        roles.add((org.springframework.context.annotation.Role) userRole);
+        roles.add((Role) userRole);
 
         user.setRoles(roles);
         return userRepository.save(user);

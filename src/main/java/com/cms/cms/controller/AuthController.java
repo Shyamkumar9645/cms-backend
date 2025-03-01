@@ -1,35 +1,15 @@
 package com.cms.cms.controller;
 
-
-
 import com.cms.cms.model.*;
 import com.cms.cms.service.AuthService;
-import com.cms.cms.service.NewOrgService;
 import com.cms.cms.service.UserDetailsImpl;
 import com.cms.cms.utils.JwtTokenProvider;
-import com.sun.security.auth.UserPrincipal;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-
-
-import java.util.Optional;
-
-
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -62,7 +42,7 @@ public class AuthController {
 
         return ResponseEntity.ok(new JwtResponse(
                 jwt,
-                jwtTokenProvider.getExpirationInMs(),
+                (long) jwtTokenProvider.getExpirationInMs(),
                 ((UserDetailsImpl) authentication.getPrincipal()).getAuthorities()
         ));
     }

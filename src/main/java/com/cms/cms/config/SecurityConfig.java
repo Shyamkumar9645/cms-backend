@@ -29,14 +29,13 @@ public class SecurityConfig {
 
     private final UserDetailsService userDetailsService;
     private final JwtAuthenticationEntryPoint jwtAuthEntryPoint;
-    private final JwtTokenProvider jwtTokenProvider;
 
+    // Remove JwtTokenProvider from constructor
     public SecurityConfig(UserDetailsService userDetailsService,
-                          JwtAuthenticationEntryPoint jwtAuthEntryPoint,
-                          JwtTokenProvider jwtTokenProvider) {
+                          JwtAuthenticationEntryPoint jwtAuthEntryPoint) {
         this.userDetailsService = userDetailsService;
         this.jwtAuthEntryPoint = jwtAuthEntryPoint;
-        this.jwtTokenProvider = jwtTokenProvider;
+        // Remove this.jwtTokenProvider assignment
     }
 
     @Value("${jwt.secret}")
@@ -54,7 +53,8 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService);
+        // Use the method to get the provider, not the field
+        return new JwtAuthenticationFilter(jwtTokenProvider(), userDetailsService);
     }
 
     @Bean
