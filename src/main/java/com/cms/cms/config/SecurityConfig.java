@@ -1,7 +1,5 @@
 package com.cms.cms.config;
 
-
-
 import com.cms.cms.utils.JwtTokenProvider;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,9 +16,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 import javax.crypto.SecretKey;
-
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -30,12 +31,10 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
     private final JwtAuthenticationEntryPoint jwtAuthEntryPoint;
 
-    // Remove JwtTokenProvider from constructor
     public SecurityConfig(UserDetailsService userDetailsService,
                           JwtAuthenticationEntryPoint jwtAuthEntryPoint) {
         this.userDetailsService = userDetailsService;
         this.jwtAuthEntryPoint = jwtAuthEntryPoint;
-        // Remove this.jwtTokenProvider assignment
     }
 
     @Value("${jwt.secret}")
@@ -53,14 +52,15 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        // Use the method to get the provider, not the field
         return new JwtAuthenticationFilter(jwtTokenProvider(), userDetailsService);
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-
+                .csrf(csrf -> csrf.disable()) // Disable CSRF for APIs
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless session
+                .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthEntryPoint)) // Handle unauthorized access
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -69,7 +69,6 @@ public class SecurityConfig {
                 );
 
         http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
 
@@ -81,5 +80,18 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    // CORS Configuration Bean
+    @Bean
+    public CorsFilter corsFilter() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true);
+        config.setAllowedOrigins(List.of("http://localhost:3000")); // Adjust for your frontend URL
+        config.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        source.registerCorsConfiguration("/**", config);
+        return new CorsFilter(source);
     }
 }
