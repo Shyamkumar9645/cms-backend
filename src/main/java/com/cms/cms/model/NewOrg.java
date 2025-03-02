@@ -85,4 +85,7 @@ public class NewOrg {
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(name = "status")
+    private String status;
 }

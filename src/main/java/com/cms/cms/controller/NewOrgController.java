@@ -1,7 +1,5 @@
 package com.cms.cms.controller;
 
-
-
 import com.cms.cms.model.NewOrg;
 import com.cms.cms.service.NewOrgService;
 import jakarta.validation.Valid;
@@ -13,20 +11,44 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
-
-import org.springframework.web.bind.annotation.*;
-
-
 
 @RestController
 @RequestMapping("/api/new-org")
+@CrossOrigin(origins = "*") // Enable CORS for all origins - adjust this for security
 public class NewOrgController {
 
     @Autowired
     private NewOrgService newOrgService;
 
+    // Get all organizations
+    @GetMapping
+    public ResponseEntity<List<NewOrg>> getAllOrganizations() {
+        try {
+            List<NewOrg> organizations = newOrgService.getAllOrganizations();
+            return new ResponseEntity<>(organizations, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // Get organization by ID
+    @GetMapping("/{id}")
+    public ResponseEntity<NewOrg> getOrganizationById(@PathVariable Long id) {
+        try {
+            NewOrg org = newOrgService.getOrganizationById(id);
+            if (org != null) {
+                return new ResponseEntity<>(org, HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // Create new organization (your existing endpoint)
     @PostMapping("/submit")
     public ResponseEntity<?> submitNewOrg(@Valid @RequestBody NewOrg newOrg) {
         try {
@@ -37,7 +59,7 @@ public class NewOrgController {
         }
     }
 
-
+    // Validation exception handler (your existing handler)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public Map<String, String> handleValidationExceptions(
@@ -51,4 +73,3 @@ public class NewOrgController {
         return errors;
     }
 }
-
