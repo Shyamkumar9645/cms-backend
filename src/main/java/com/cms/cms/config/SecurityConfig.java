@@ -1,7 +1,8 @@
 package com.cms.cms.config;
 
-import com.cms.cms.utils.JwtTokenProvider;
-import io.jsonwebtoken.security.Keys;
+import com.cms.cms.config.JwtAuthenticationEntryPoint;
+import com.cms.cms.config.JwtAuthenticationFilter;
+import com.cms.cms.config.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,7 +21,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import javax.crypto.SecretKey;
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -31,23 +32,21 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
     private final JwtAuthenticationEntryPoint jwtAuthEntryPoint;
 
+    @Value("${app.jwt.secret}")
+    private String jwtSecret;
+
+    @Value("${app.frontend.url:https://localhost:3000}")
+    private String frontendUrl;
+
     public SecurityConfig(UserDetailsService userDetailsService,
                           JwtAuthenticationEntryPoint jwtAuthEntryPoint) {
         this.userDetailsService = userDetailsService;
         this.jwtAuthEntryPoint = jwtAuthEntryPoint;
     }
 
-    @Value("${jwt.secret}")
-    private String secretKey;
-
-    @Bean
-    public SecretKey jwtSecretKey() {
-        return Keys.hmacShaKeyFor(secretKey.getBytes());
-    }
-
     @Bean
     public JwtTokenProvider jwtTokenProvider() {
-        return new JwtTokenProvider(jwtSecretKey());
+        return new JwtTokenProvider();
     }
 
     @Bean
@@ -60,15 +59,17 @@ public class SecurityConfig {
         http
                 // Disable CSRF since we're using tokens
                 .csrf(csrf -> csrf.disable())
-                // Configure stateless session management
+                // Configure CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
+                // Configure stateless session management
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // Configure exception handling
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthEntryPoint))
                 // Configure URL-based authorization
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/auth/login/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
                         .anyRequest().authenticated()
                 );
 
@@ -91,14 +92,18 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Allow credentials (e.g. cookies, authorization headers)
+        // Allow credentials
         configuration.setAllowCredentials(true);
-        // Configure allowed origins (adjust as needed for your frontend URL)
-        configuration.setAllowedOrigins(List.of("https://localhost:3000"));
+        // Configure allowed origins
+        configuration.setAllowedOrigins(List.of(frontendUrl));
         // Configure allowed headers
         configuration.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
         // Configure allowed HTTP methods
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        // Configure exposed headers
+        configuration.setExposedHeaders(List.of("Authorization"));
+        // Set max age
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         // Apply this configuration to all endpoints

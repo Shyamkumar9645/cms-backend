@@ -1,5 +1,6 @@
 package com.cms.cms;
 
+import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -7,7 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class CmsProjectApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(CmsProjectApplication.class, args);
+		Dotenv dotenv = Dotenv.load(); SpringApplication.run(CmsProjectApplication.class, args);
 	}
 
 }
