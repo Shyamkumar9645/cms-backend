@@ -2,12 +2,14 @@ package com.cms.cms.service;
 
 import com.cms.cms.Repository.UserRepository;
 import com.cms.cms.model.User;
+import org.springframework.context.annotation.Primary;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-@Service
+@Service("userDetailsServiceImpl")
+@Primary// Add a specific name to the service
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final UserRepository userRepository;

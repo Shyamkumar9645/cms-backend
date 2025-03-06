@@ -53,6 +53,7 @@ public class NewOrgController {
     public ResponseEntity<?> submitNewOrg(@Valid @RequestBody NewOrg newOrg) {
         try {
             NewOrg createdOrg = newOrgService.createNewOrg(newOrg);
+
             return new ResponseEntity<>(createdOrg, HttpStatus.CREATED);  // Return 201 Created
         } catch (Exception e) { // Catch any other exceptions
             return new ResponseEntity<>("An error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR); // 500

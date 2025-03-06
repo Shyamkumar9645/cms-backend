@@ -1,5 +1,6 @@
 package com.cms.cms.config;
 
+import com.cms.cms.service.OrganizationUserDetails;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
@@ -15,6 +16,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtTokenProvider {
@@ -36,16 +38,34 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(Authentication authentication) {
+    public String generateToken(Authentication authentication, String userType) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
         Map<String, Object> claims = new HashMap<>();
-        // Safely get the authorities
+        claims.put("userType", userType);
+
+        if ("ORGANIZATION".equals(userType) && userDetails instanceof OrganizationUserDetails) {
+            claims.put("orgId", ((OrganizationUserDetails) userDetails).getOrgId());
+        }
+
         claims.put("roles", userDetails.getAuthorities().stream()
                 .map(authority -> authority.getAuthority())
                 .toList());
 
-        return createToken(claims, userDetails.getUsername());
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(userDetails.getUsername())
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(getSigningKey())
+                .compact();
+    }
+  // Method overload for backward compatibility
+    public String generateToken(Authentication authentication) {
+        return generateToken(authentication, "ADMIN");
     }
 
     public String generateRefreshToken(String username) {

@@ -1,0 +1,147 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <!-- Create organizations table -->
+    <changeSet id="1" author="you">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="organizations"/>
+            </not>
+        </preConditions>
+        <createTable tableName="organizations">
+            <column name="id" type="BIGSERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="org_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="constitution" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="address1" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="city" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="zip" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="gst" type="VARCHAR(255)"/>
+            <column name="pan" type="VARCHAR(255)"/>
+            <column name="drug1" type="VARCHAR(255)"/>
+            <column name="drug2" type="VARCHAR(255)"/>
+            <column name="rep_fname" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rep_lname" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rep_email" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rep_aadhar" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rep_number" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="web_uname" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="web_password" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+            <column name="status" type="VARCHAR(255)" defaultValue="processing"/>
+        </createTable>
+    </changeSet>
+
+    <!-- Create orders table -->
+    <changeSet id="2" author="you">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="orders"/>
+            </not>
+        </preConditions>
+        <createTable tableName="orders">
+            <column name="id" type="SERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="order_id" type="VARCHAR(20)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="organization_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="customer_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="order_date" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="delivery_date" type="DATE"/>
+            <column name="total_amount" type="NUMERIC(12,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payment_method" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="order_status" type="VARCHAR(50)" defaultValue="Pending">
+                <constraints nullable="false"/>
+            </column>
+            <column name="shipping_address" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+
+        <!-- Add foreign key constraint -->
+        <addForeignKeyConstraint baseTableName="orders" baseColumnNames="organization_id"
+                                 constraintName="orders_organization_id_fkey"
+                                 referencedTableName="organizations" referencedColumnNames="id"/>
+    </changeSet>
+
+    <!-- Create users table -->
+    <changeSet id="3" author="you">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="users"/>
+            </not>
+        </preConditions>
+        <createTable tableName="users">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="email" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="password" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="username" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <!-- Create roles table -->
+    <changeSet id="4" author="you">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="roles"/>
+            </not>
+        </preConditions>
+        <createTable tableName="roles">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(50)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>

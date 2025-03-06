@@ -1,0 +1,53 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="2" author="you">
+        <!-- Preconditions for organizations -->
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM organizations WHERE org_name = 'Org1'</sqlCheck>
+        </preConditions>
+
+        <!-- Insert organizations -->
+        <insert tableName="organizations">
+            <column name="org_name" value="Org1"/>
+            <column name="constitution" value="Constitution1"/>
+            <column name="address1" value="Address1"/>
+            <column name="city" value="City1"/>
+            <column name="zip" value="Zip1"/>
+            <column name="gst" value="GST1"/>
+            <column name="pan" value="PAN1"/>
+            <column name="drug1" value="Drug1"/>
+            <column name="drug2" value="Drug2"/>
+            <column name="rep_fname" value="John"/>
+            <column name="rep_lname" value="Doe"/>
+            <column name="rep_email" value="john.doe@example.com"/>
+            <column name="rep_aadhar" value="123456789012"/>
+            <column name="rep_number" value="1234567890"/>
+            <column name="web_uname" value="webuser1"/>
+            <column name="web_password" value="webpass1"/>
+            <column name="status" value="active"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="3" author="you">
+        <!-- Preconditions for orders -->
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM orders WHERE order_id = 'ORDER1'</sqlCheck>
+        </preConditions>
+
+        <!-- Insert orders -->
+        <insert tableName="orders">
+            <column name="order_id" value="ORDER1"/>
+            <column name="organization_id" value="1"/>
+            <column name="customer_name" value="Customer1"/>
+            <column name="order_date" value="2023-10-01"/>
+            <column name="delivery_date" value="2023-10-05"/>
+            <column name="total_amount" value="100.00"/>
+            <column name="payment_method" value="Credit Card"/>
+            <column name="order_status" value="Pending"/>
+            <column name="shipping_address" value="Address1"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

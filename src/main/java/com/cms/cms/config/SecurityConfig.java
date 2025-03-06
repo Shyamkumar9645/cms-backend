@@ -1,12 +1,13 @@
 package com.cms.cms.config;
 
-import com.cms.cms.config.JwtAuthenticationEntryPoint;
-import com.cms.cms.config.JwtAuthenticationFilter;
-import com.cms.cms.config.JwtTokenProvider;
+
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -28,7 +29,6 @@ import java.util.List;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-
     private final UserDetailsService userDetailsService;
     private final JwtAuthenticationEntryPoint jwtAuthEntryPoint;
 
@@ -38,8 +38,10 @@ public class SecurityConfig {
     @Value("${app.frontend.url:https://localhost:3000}")
     private String frontendUrl;
 
-    public SecurityConfig(UserDetailsService userDetailsService,
-                          JwtAuthenticationEntryPoint jwtAuthEntryPoint) {
+    // Simplified constructor
+    public SecurityConfig(
+            UserDetailsService userDetailsService,
+            JwtAuthenticationEntryPoint jwtAuthEntryPoint) {
         this.userDetailsService = userDetailsService;
         this.jwtAuthEntryPoint = jwtAuthEntryPoint;
     }
@@ -71,10 +73,9 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .anyRequest().authenticated()
-                );
+                )
+                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
-        // Add the JWT authentication filter
-        http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
@@ -109,5 +110,13 @@ public class SecurityConfig {
         // Apply this configuration to all endpoints
         source.registerCorsConfiguration("/**", configuration);
         return source;
+    }
+
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
     }
 }
