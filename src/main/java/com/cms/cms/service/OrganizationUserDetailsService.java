@@ -3,7 +3,6 @@ package com.cms.cms.service;
 
 import com.cms.cms.Repository.OrganizationRepository;
 import com.cms.cms.model.NewOrg;
-import com.cms.cms.model.OrganizationCredentials;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

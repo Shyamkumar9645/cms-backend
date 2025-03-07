@@ -2,7 +2,9 @@ package com.cms.cms.controller;
 
 
 import com.cms.cms.model.NewOrg;
+import com.cms.cms.model.Order;
 import com.cms.cms.service.NewOrgService;
+import com.cms.cms.service.OrgOrderService;
 import com.cms.cms.service.OrganizationUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -12,14 +14,17 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/org/dashboard")
+@RequestMapping("/api/org")
 public class OrgDashboardController {
 
     @Autowired
     private NewOrgService newOrgService;
 
+    @Autowired
+    private OrgOrderService orgOrderService;
+
     @PreAuthorize("hasRole('ORGANIZATION')")
-    @GetMapping("/profile")
+    @GetMapping("/dashboard/profile")
     public ResponseEntity<?> getOrgProfile() {
         // Get current authenticated organization user
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -50,8 +55,13 @@ public class OrgDashboardController {
 
         // Fetch organization orders (you'll need to create this service)
         // List<Order> orders = orderService.getOrdersByOrgId(orgId);
+        Order order = (Order) orgOrderService.getOrdersByOrgId(Math.toIntExact(Long.valueOf(orgId)));
+
+        if (order == null) {
+            return ResponseEntity.notFound().build();
+        }
 
         // For now, return a placeholder
-        return ResponseEntity.ok("Orders for organization ID: " + orgId);
+        return ResponseEntity.ok(order);
     }
 }

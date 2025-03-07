@@ -1,6 +1,5 @@
 package com.cms.cms.config;
 
-import com.cms.cms.service.OrganizationUserDetails;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
@@ -16,8 +15,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
+/**
+ * Service responsible for JWT token operations.
+ * This class handles token generation, validation, and extraction of information from tokens.
+ */
 @Component
 public class JwtTokenProvider {
     private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
@@ -31,45 +33,67 @@ public class JwtTokenProvider {
     @Value("${app.jwt.issuer:cms-project}")
     private String issuer;
 
-    @Value("${app.jwt.refresh-expiration:604800000}") // 7 days by default
+    @Value("${app.jwt.refresh-expiration:604800000}")
     private int refreshTokenExpirationMs;
 
+
+    /**
+     * Get the signing key for JWT
+     */
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
-    // Update this method in JwtTokenProvider.java
+    /**
+     * Generate JWT token for a user
+     *
+     * @param authentication The authentication object containing user details
+     * @param userType The type of user (ADMIN or ORGANIZATION)
+     * @return JWT token string
+     */
     public String generateToken(Authentication authentication, String userType) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        return generateTokenForUser(userDetails, userType);
+    }
 
+    /**
+     * Generate token directly from UserDetails
+     *
+     * @param userDetails The user details
+     * @param userType The type of user
+     * @return JWT token string
+     */
+    public String generateTokenForUser(UserDetails userDetails, String userType) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userType", userType);
 
-        if ("ORGANIZATION".equals(userType) && userDetails instanceof OrganizationUserDetails) {
-            claims.put("orgId", ((OrganizationUserDetails) userDetails).getOrgId());
+        // Extract organization ID if applicable
+        if ("ORGANIZATION".equals(userType) && userDetails instanceof UserDetailsWithOrg) {
+            claims.put("orgId", ((UserDetailsWithOrg) userDetails).getOrgId());
         }
 
+        // Add roles to claims
         claims.put("roles", userDetails.getAuthorities().stream()
                 .map(authority -> authority.getAuthority())
                 .toList());
 
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
-
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(userDetails.getUsername())
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(getSigningKey())
-                .compact();
+        return createToken(claims, userDetails.getUsername());
     }
 
-    // Method overload for backward compatibility
+    /**
+     * Generate token with default user type (ADMIN)
+     * Method overload for backward compatibility
+     */
     public String generateToken(Authentication authentication) {
         return generateToken(authentication, "ADMIN");
     }
 
+    /**
+     * Generate a refresh token
+     *
+     * @param username The username
+     * @return Refresh token string
+     */
     public String generateRefreshToken(String username) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + refreshTokenExpirationMs);
@@ -83,6 +107,9 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    /**
+     * Create a token with the specified claims and subject
+     */
     private String createToken(Map<String, Object> claims, String subject) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
@@ -97,31 +124,38 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    /**
+     * Extract username from token
+     */
     public String getUsernameFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-
+        Claims claims = extractAllClaims(token);
         return claims.getSubject();
     }
 
     /**
-     * Extract the user type from JWT token claims
+     * Extract user type from token
      */
     public String getUserTypeFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-
+        Claims claims = extractAllClaims(token);
         // Default to "ADMIN" if userType claim is not present
         return claims.get("userType", String.class) != null ?
                 claims.get("userType", String.class) : "ADMIN";
     }
 
+    /**
+     * Extract all claims from a token
+     */
+    private Claims extractAllClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
+    /**
+     * Validate a token
+     */
     public boolean validateToken(String authToken) {
         try {
             Jwts.parserBuilder()
@@ -143,17 +177,26 @@ public class JwtTokenProvider {
         return false;
     }
 
+    /**
+     * Get token expiration time in milliseconds
+     */
     public int getExpirationInMs() {
         return jwtExpirationInMs;
     }
 
+    /**
+     * Get the expiration date from token
+     */
     public Date getExpirationDateFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-
+        Claims claims = extractAllClaims(token);
         return claims.getExpiration();
+    }
+
+    /**
+     * Interface for user details with organization ID
+     * This decouples the class from specific implementation
+     */
+    public interface UserDetailsWithOrg {
+        Long getOrgId();
     }
 }

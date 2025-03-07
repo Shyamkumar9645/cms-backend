@@ -2,10 +2,7 @@ package com.cms.cms.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
-// Remove this incorrect import
-// import org.springframework.context.annotation.Role;
 
-import java.util.HashSet;
 import java.util.Set;
 
 @Entity

@@ -1,6 +1,5 @@
 package com.cms.cms.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -23,52 +22,64 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
+/**
+ * Security configuration for the application.
+ * This class configures authentication, authorization, CORS, and JWT filter.
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-    @Autowired
-    @Qualifier("userDetailsServiceImpl")
-    private UserDetailsService adminUserDetailsService;
 
-    @Autowired
+    @Qualifier("userDetailsServiceImpl")
+    private final UserDetailsService adminUserDetailsService;
+
     @Qualifier("organizationUserDetailsService")
-    private UserDetailsService orgUserDetailsService;
+    private final UserDetailsService orgUserDetailsService;
 
     private final JwtAuthenticationEntryPoint jwtAuthEntryPoint;
-
-    @Value("${app.jwt.secret}")
-    private String jwtSecret;
 
     @Value("${app.frontend.url:https://localhost:3000}")
     private String frontendUrl;
 
-    // Updated constructor to include both user details services
+    /**
+     * Constructor injection for better testability and immutability
+     */
     public SecurityConfig(
-            @Qualifier("userDetailsServiceImpl") UserDetailsService adminUserDetailsService,
-            @Qualifier("organizationUserDetailsService") UserDetailsService orgUserDetailsService,
+            UserDetailsService adminUserDetailsService,
+            UserDetailsService orgUserDetailsService,
             JwtAuthenticationEntryPoint jwtAuthEntryPoint) {
         this.adminUserDetailsService = adminUserDetailsService;
         this.orgUserDetailsService = orgUserDetailsService;
         this.jwtAuthEntryPoint = jwtAuthEntryPoint;
     }
 
+    /**
+     * Create JwtTokenProvider with default no-args constructor
+     */
     @Bean
     public JwtTokenProvider jwtTokenProvider() {
         return new JwtTokenProvider();
     }
 
+    /**
+     * Create JWT authentication filter
+     */
     @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter() {
+    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
         return new JwtAuthenticationFilter(
-                jwtTokenProvider(),
+                jwtTokenProvider,
                 adminUserDetailsService,
                 orgUserDetailsService
         );
     }
 
+    /**
+     * Configure security filter chain
+     */
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http
                 // Disable CSRF since we're using tokens
                 .csrf(csrf -> csrf.disable())
@@ -86,44 +97,48 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health").permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
+    /**
+     * Create authentication manager
+     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
 
+    /**
+     * Create password encoder
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // Define a CorsConfigurationSource bean for CORS configuration
+    /**
+     * Configure CORS
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Allow credentials
         configuration.setAllowCredentials(true);
-        // Configure allowed origins
         configuration.setAllowedOrigins(List.of(frontendUrl));
-        // Configure allowed headers
         configuration.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
-        // Configure allowed HTTP methods
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        // Configure exposed headers
         configuration.setExposedHeaders(List.of("Authorization"));
-        // Set max age
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        // Apply this configuration to all endpoints
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
+    /**
+     * Configure authentication provider for admin users
+     */
     @Bean
     public DaoAuthenticationProvider adminAuthenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -132,6 +147,9 @@ public class SecurityConfig {
         return authProvider;
     }
 
+    /**
+     * Configure authentication provider for organization users
+     */
     @Bean
     public DaoAuthenticationProvider orgAuthenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
