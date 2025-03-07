@@ -1,10 +1,9 @@
 package com.cms.cms.controller;
 
-import com.cms.cms.Repository.OrganizationRepository;
 import com.cms.cms.config.JwtTokenProvider;
-import com.cms.cms.model.*;
+import com.cms.cms.model.JwtResponse;
+import com.cms.cms.model.LoginRequest;
 import com.cms.cms.service.AuthService;
-import com.cms.cms.service.UserDetailsImpl;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,11 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -27,29 +23,18 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
-
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
-
-    @Autowired
-    private AuthenticationManager authenticationManager;
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
     @Autowired
-    private AuthService authService;
-
-    @Autowired
-    private OrganizationRepository organizationRepository;
+    @Qualifier("organizationUserDetailsService")
+    private UserDetailsService orgUserDetailsService;
 
     @Autowired
     @Qualifier("userDetailsServiceImpl")
     private UserDetailsService adminUserDetailsService;
-
-    @Autowired
-    @Qualifier("organizationUserDetailsService")
-    private UserDetailsService orgUserDetailsService;
-
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -58,42 +43,23 @@ public class AuthController {
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         logger.info("Received login request for username: {}", loginRequest.getUsername());
 
-        // First check if this is an organization user
-        boolean isOrgUser = false;
-        UserDetails userDetails = null;
+        // Try to authenticate as organization user first, then as admin
+        UserDetails userDetails = findUserDetails(loginRequest.getUsername());
 
-        try {
-            logger.info("Trying to find organization user: {}", loginRequest.getUsername());
-            userDetails = orgUserDetailsService.loadUserByUsername(loginRequest.getUsername());
-            isOrgUser = true;
-            logger.info("Found organization user: {}", userDetails.getUsername());
-        } catch (UsernameNotFoundException orgEx) {
-            logger.warn("Not found as organization: {}", orgEx.getMessage());
-            // Not found as org, try as admin user
-            try {
-                userDetails = adminUserDetailsService.loadUserByUsername(loginRequest.getUsername());
-            } catch (UsernameNotFoundException adminEx) {
-                // User doesn't exist in either repository
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ErrorResponse("USER_NOT_FOUND", "User not found"));
-            }
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponse("USER_NOT_FOUND", "User not found"));
         }
 
-        // Now we have valid userDetails, verify the password manually
+        // Verify password
         if (!passwordEncoder.matches(loginRequest.getPassword(), userDetails.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ErrorResponse("INVALID_CREDENTIALS", "Invalid password"));
         }
 
-        // Password is valid, create authentication token
-        Authentication authentication = new UsernamePasswordAuthenticationToken(
-                userDetails, null, userDetails.getAuthorities());
-
-        // Set authentication in context
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        // Generate JWT token with proper user type
-        String userType = isOrgUser ? "ORGANIZATION" : "ADMIN";
+        // Create authentication and generate token
+        String userType = determineUserType(userDetails);
+        Authentication authentication = createAuthentication(userDetails);
         String jwt = jwtTokenProvider.generateToken(authentication, userType);
 
         logger.info("{} authentication successful for username: {}", userType, loginRequest.getUsername());
@@ -105,7 +71,50 @@ public class AuthController {
                 userType
         ));
     }
-    // Helper classes
+
+    /**
+     * Find user details by trying organization and admin services
+     */
+    private UserDetails findUserDetails(String username) {
+        try {
+            logger.debug("Trying to find organization user: {}", username);
+            return orgUserDetailsService.loadUserByUsername(username);
+        } catch (UsernameNotFoundException orgEx) {
+            logger.debug("Not found as organization, trying admin: {}", username);
+            try {
+                return adminUserDetailsService.loadUserByUsername(username);
+            } catch (UsernameNotFoundException adminEx) {
+                logger.warn("User not found in any service: {}", username);
+                return null;
+            }
+        }
+    }
+
+    /**
+     * Determine user type based on the service that provided the user details
+     */
+    private String determineUserType(UserDetails userDetails) {
+        // This can be improved by checking authorities or class type
+        // For now, we'll use a simple check based on the same logic as before
+        try {
+            orgUserDetailsService.loadUserByUsername(userDetails.getUsername());
+            return "ORGANIZATION";
+        } catch (UsernameNotFoundException e) {
+            return "ADMIN";
+        }
+    }
+
+    /**
+     * Create authentication token and set in security context
+     */
+    private Authentication createAuthentication(UserDetails userDetails) {
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        return authentication;
+    }
+
+    // Helper class for error responses
     public static class ErrorResponse {
         private final String error;
         private final String message;

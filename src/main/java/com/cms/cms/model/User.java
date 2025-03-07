@@ -33,7 +33,5 @@ public class User {
     )
     private Set<Role> roles; // Using your custom Role class
 
-    public Set<Role> getRoles() {
-        return roles;
-    }
+
 }
