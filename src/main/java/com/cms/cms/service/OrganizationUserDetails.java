@@ -1,7 +1,6 @@
 package com.cms.cms.service;
 
-
-import com.cms.cms.model.OrganizationCredentials;
+import com.cms.cms.model.NewOrg;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,26 +15,25 @@ public class OrganizationUserDetails implements UserDetails {
     private String password;
     private Collection<? extends GrantedAuthority> authorities;
 
-    public OrganizationUserDetails(Long id, Integer orgId, String username, String password,
+    public OrganizationUserDetails(Long id, String username, String password,
                                    Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
-        this.orgId = orgId;
+        this.orgId = id.intValue(); // Use the same ID as both orgId and id
         this.username = username;
         this.password = password;
         this.authorities = authorities;
     }
 
-    public static OrganizationUserDetails build(OrganizationCredentials org) {
-        // Assign ROLE_USER authority to organization users
+    public static OrganizationUserDetails build(NewOrg org) {
+        // Assign ROLE_ORGANIZATION authority
         Collection<GrantedAuthority> authorities = Collections.singletonList(
                 new SimpleGrantedAuthority("ROLE_ORGANIZATION")
         );
 
         return new OrganizationUserDetails(
                 org.getId(),
-                org.getOrgId(),
-                org.getUsername(),
-                org.getPassword(),
+                org.getWebsiteUsername(),
+                org.getWebsitePassword(),
                 authorities
         );
     }

@@ -1,12 +1,11 @@
 package com.cms.cms.config;
 
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -22,14 +21,20 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-    private final UserDetailsService userDetailsService;
+    @Autowired
+    @Qualifier("userDetailsServiceImpl")
+    private UserDetailsService adminUserDetailsService;
+
+    @Autowired
+    @Qualifier("organizationUserDetailsService")
+    private UserDetailsService orgUserDetailsService;
+
     private final JwtAuthenticationEntryPoint jwtAuthEntryPoint;
 
     @Value("${app.jwt.secret}")
@@ -38,11 +43,13 @@ public class SecurityConfig {
     @Value("${app.frontend.url:https://localhost:3000}")
     private String frontendUrl;
 
-    // Simplified constructor
+    // Updated constructor to include both user details services
     public SecurityConfig(
-            UserDetailsService userDetailsService,
+            @Qualifier("userDetailsServiceImpl") UserDetailsService adminUserDetailsService,
+            @Qualifier("organizationUserDetailsService") UserDetailsService orgUserDetailsService,
             JwtAuthenticationEntryPoint jwtAuthEntryPoint) {
-        this.userDetailsService = userDetailsService;
+        this.adminUserDetailsService = adminUserDetailsService;
+        this.orgUserDetailsService = orgUserDetailsService;
         this.jwtAuthEntryPoint = jwtAuthEntryPoint;
     }
 
@@ -53,7 +60,11 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(jwtTokenProvider(), userDetailsService);
+        return new JwtAuthenticationFilter(
+                jwtTokenProvider(),
+                adminUserDetailsService,
+                orgUserDetailsService
+        );
     }
 
     @Bean
@@ -70,6 +81,7 @@ public class SecurityConfig {
                 // Configure URL-based authorization
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/new-org/**").permitAll() // Allow organization registration
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .anyRequest().authenticated()
@@ -113,9 +125,17 @@ public class SecurityConfig {
     }
 
     @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
+    public DaoAuthenticationProvider adminAuthenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setUserDetailsService(adminUserDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
+    }
+
+    @Bean
+    public DaoAuthenticationProvider orgAuthenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(orgUserDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }

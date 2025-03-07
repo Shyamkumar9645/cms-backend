@@ -38,6 +38,7 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
+    // Update this method in JwtTokenProvider.java
     public String generateToken(Authentication authentication, String userType) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
@@ -63,7 +64,8 @@ public class JwtTokenProvider {
                 .signWith(getSigningKey())
                 .compact();
     }
-  // Method overload for backward compatibility
+
+    // Method overload for backward compatibility
     public String generateToken(Authentication authentication) {
         return generateToken(authentication, "ADMIN");
     }
@@ -103,6 +105,21 @@ public class JwtTokenProvider {
                 .getBody();
 
         return claims.getSubject();
+    }
+
+    /**
+     * Extract the user type from JWT token claims
+     */
+    public String getUserTypeFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        // Default to "ADMIN" if userType claim is not present
+        return claims.get("userType", String.class) != null ?
+                claims.get("userType", String.class) : "ADMIN";
     }
 
     public boolean validateToken(String authToken) {

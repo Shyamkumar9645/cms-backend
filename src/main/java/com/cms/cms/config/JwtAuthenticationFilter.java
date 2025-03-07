@@ -6,6 +6,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,11 +25,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private final JwtTokenProvider tokenProvider;
-    private final UserDetailsService userDetailsService;
 
-    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, UserDetailsService userDetailsService) {
+    @Autowired
+    @Qualifier("userDetailsServiceImpl")
+    private UserDetailsService adminUserDetailsService;
+
+    @Autowired
+    @Qualifier("organizationUserDetailsService")
+    private UserDetailsService orgUserDetailsService;
+
+    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider,
+                                   @Qualifier("userDetailsServiceImpl") UserDetailsService adminUserDetailsService,
+                                   @Qualifier("organizationUserDetailsService") UserDetailsService orgUserDetailsService) {
         this.tokenProvider = tokenProvider;
-        this.userDetailsService = userDetailsService;
+        this.adminUserDetailsService = adminUserDetailsService;
+        this.orgUserDetailsService = orgUserDetailsService;
     }
 
     @Override
@@ -37,8 +49,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String jwt = getJwtFromRequest(request);
 
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
-                // In JwtAuthenticationFilter.java, line 40
-                String username = tokenProvider.getUsernameFromToken(jwt); // Change from getUsernameFromJWT
+                // Get username and user type from the token
+                String username = tokenProvider.getUsernameFromToken(jwt);
+                String userType = tokenProvider.getUserTypeFromToken(jwt);
+
+                // Select the appropriate UserDetailsService based on the user type
+                UserDetailsService userDetailsService = "ORGANIZATION".equals(userType)
+                        ? orgUserDetailsService
+                        : adminUserDetailsService;
 
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                 UsernamePasswordAuthenticationToken authentication =

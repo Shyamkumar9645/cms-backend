@@ -2,9 +2,12 @@ package com.cms.cms.service;
 
 
 import com.cms.cms.Repository.NewOrgRepository;
+import com.cms.cms.Repository.OrganizationRepository;
 import com.cms.cms.model.NewOrg;
+import com.cms.cms.model.OrganizationCredentials;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,13 +19,16 @@ public class NewOrgServiceImpl implements NewOrgService {
     @Autowired
     private NewOrgRepository newOrgRepository;
 
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    @Autowired
+    private PasswordEncoder passwordEncoder; // Use Spring's injected PasswordEncoder
 
     @Override
     public NewOrg createNewOrg(NewOrg newOrg) {
+        // Hash the password before saving
         String hashedPassword = passwordEncoder.encode(newOrg.getWebsitePassword());
         newOrg.setWebsitePassword(hashedPassword);
 
+        // Save organization with hashed password
         return newOrgRepository.save(newOrg);
     }
 
