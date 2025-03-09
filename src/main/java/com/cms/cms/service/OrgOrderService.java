@@ -12,4 +12,5 @@ public interface OrgOrderService {
     Order createOrder(Order order, Integer orgId);
     Order updateOrder(Order order, Integer orgId);
     boolean cancelOrder(Long orderId, Integer orgId);
+
 }

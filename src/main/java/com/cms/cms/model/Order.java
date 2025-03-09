@@ -47,7 +47,6 @@ public class Order {
             // Generate a unique ID - temporary implementation
             // In production, you'd use a more robust method
             orderId = "ORD-" + System.currentTimeMillis();
-            orgId = 25;
 
         }
     }
