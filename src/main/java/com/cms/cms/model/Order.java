@@ -1,7 +1,7 @@
 package com.cms.cms.model;
 
-
 import jakarta.persistence.*;
+import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -9,17 +9,14 @@ import java.util.List;
 
 @Entity
 @Table(name = "orders")
+@Data
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "org_id", nullable = true)
+    @Column(name = "organization_id", nullable = true)
     private Integer orgId;
-
-    @CreationTimestamp
-    @Column(name = "order_date")
-    private LocalDateTime orderDate;
 
     @Column(name = "status")
     private String status = "Pending";
@@ -39,76 +36,80 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderItem> items;
 
-    // Getters and setters
-    public Long getId() {
-        return id;
+    @Column(name = "order_id", nullable = false, unique = true)
+    private String orderId;
+
+
+
+    @PrePersist
+    protected void onCreate() {
+        if (orderId == null) {
+            // Generate a unique ID - temporary implementation
+            // In production, you'd use a more robust method
+            orderId = "ORD-" + System.currentTimeMillis();
+            orgId = 25;
+
+        }
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
 
-    public Integer getOrgId() {
-        return orgId;
-    }
+    // New fields from the form
+    @Column(name = "prn_no")
+    private String prnNo;
 
-    public void setOrgId(Integer orgId) {
-        this.orgId = orgId;
-    }
+    @Column(name = "product_name")
+    private String productName;
 
-    public LocalDateTime getOrderDate() {
-        return orderDate;
-    }
+    @Column(name = "brand")
+    private String brand;
 
-    public void setOrderDate(LocalDateTime orderDate) {
-        this.orderDate = orderDate;
-    }
+    @Column(name = "type")
+    private String type;
 
-    public String getStatus() {
-        return status;
-    }
+    @Column(name = "unit_type")
+    private String unitType;
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
+    @Column(name = "batch_size_strips")
+    private Integer batchSizeStrips;
 
-    public BigDecimal getTotalAmount() {
-        return totalAmount;
-    }
+    @Column(name = "unit")
+    private String unit;
 
-    public void setTotalAmount(BigDecimal totalAmount) {
-        this.totalAmount = totalAmount;
-    }
+    @Column(name = "batch_size_tabs")
+    private Integer batchSizeTabs;
 
-    public String getShippingAddress() {
-        return shippingAddress;
-    }
+    @Column(name = "mrp", precision = 10, scale = 2)
+    private BigDecimal mrp;
 
-    public void setShippingAddress(String shippingAddress) {
-        this.shippingAddress = shippingAddress;
-    }
+    @Column(name = "size_code")
+    private String sizeCode;
 
-    public LocalDateTime getExpectedDelivery() {
-        return expectedDelivery;
-    }
+    @Column(name = "pvc_color")
+    private String pvcColor;
 
-    public void setExpectedDelivery(LocalDateTime expectedDelivery) {
-        this.expectedDelivery = expectedDelivery;
-    }
+    @Column(name = "packing_size")
+    private String packingSize;
 
-    public String getTrackingNumber() {
-        return trackingNumber;
-    }
+    @Column(name = "rate", precision = 10, scale = 2)
+    private BigDecimal rate;
 
-    public void setTrackingNumber(String trackingNumber) {
-        this.trackingNumber = trackingNumber;
-    }
+    @Column(name = "remarks")
+    private String remarks;
 
-    public List<OrderItem> getItems() {
-        return items;
-    }
+    @Column(name = "cylinder_charges", precision = 10, scale = 2)
+    private BigDecimal cylinderCharges;
 
-    public void setItems(List<OrderItem> items) {
-        this.items = items;
-    }
+    @Column(name = "dpco_mrp", precision = 10, scale = 2)
+    private BigDecimal dpcoMrp;
+
+    @Column(name = "composition")
+    private String composition;
+
+    @Column(name = "quantity")
+    private Integer quantity;
+
+    @Column(name = "price", precision = 10, scale = 2)
+    private BigDecimal price;
+
+
 }

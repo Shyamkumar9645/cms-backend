@@ -1,6 +1,5 @@
 package com.cms.cms.controller;
 
-
 import com.cms.cms.model.NewOrg;
 import com.cms.cms.model.Order;
 import com.cms.cms.service.NewOrgService;
@@ -12,6 +11,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Collections;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/org")
@@ -53,15 +55,21 @@ public class OrgDashboardController {
         // Get organization ID
         Integer orgId = userDetails.getOrgId();
 
-        // Fetch organization orders (you'll need to create this service)
-        // List<Order> orders = orderService.getOrdersByOrgId(orgId);
-        Order order = (Order) orgOrderService.getOrdersByOrgId(Math.toIntExact(Long.valueOf(orgId)));
+        // Fetch organization orders - properly handle as a List
+        List<Order> orders = orgOrderService.getOrdersByOrgId(Math.toIntExact(Long.valueOf(orgId)));
 
-        if (order == null) {
-            return ResponseEntity.notFound().build();
+        if (orders == null || orders.isEmpty()) {
+            return ResponseEntity.ok(Collections.emptyList()); // Return empty list instead of 404
         }
 
-        // For now, return a placeholder
-        return ResponseEntity.ok(order);
+        // Return the list of orders
+        return ResponseEntity.ok(orders);
+    }
+
+    @PreAuthorize("hasRole('ORGANIZATION')")
+    @GetMapping("/dashboard/orders")
+    public ResponseEntity<?> getOrgDashboardOrders() {
+        // Simply delegate to the existing method
+        return getOrgOrders();
     }
 }
