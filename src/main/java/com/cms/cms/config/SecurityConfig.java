@@ -92,6 +92,9 @@ public class SecurityConfig {
                 // Configure URL-based authorization
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/admin/**").permitAll()
+                        .requestMatchers("/api/**").permitAll()
+
                         .requestMatchers("/api/new-org/**").permitAll() // Allow organization registration
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()

@@ -23,7 +23,7 @@ public class AdminOrderController {
     @Autowired
     private OrgOrderService orgOrderService;
 
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN') or (authentication.details['userType'] == 'ADMIN')")
     @GetMapping("/company/{companyId}/orders")
     public ResponseEntity<?> getOrdersForCompany(@PathVariable Long companyId) {
         logger.info("Fetching orders for company ID: {}", companyId);
@@ -44,7 +44,7 @@ public class AdminOrderController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+
     @GetMapping("/orders/{orgId}")
     public ResponseEntity<?> getOrdersForOrg(@PathVariable Long orgId) {
         try {
@@ -55,7 +55,7 @@ public class AdminOrderController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+
     @GetMapping("/orders/{orgId}/{orderId}")
     public ResponseEntity<?> getOrderDetails(@PathVariable Long orgId, @PathVariable Long orderId) {
         try {
@@ -69,7 +69,7 @@ public class AdminOrderController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+
     @PostMapping("/orders/submit")
     public ResponseEntity<?> submitOrders(@Valid @RequestBody Order order) {
         try {
@@ -85,7 +85,7 @@ public class AdminOrderController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+
     @PutMapping("/orders/{orderId}")
     public ResponseEntity<?> updateOrder(@PathVariable Long orderId, @Valid @RequestBody Order order) {
         try {

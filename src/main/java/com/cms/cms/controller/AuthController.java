@@ -19,6 +19,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.stream.Collectors;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -110,6 +112,10 @@ public class AuthController {
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 userDetails, null, userDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authentication);
+        logger.info("Created authentication with authorities: {}",
+                userDetails.getAuthorities().stream()
+                        .map(a -> a.getAuthority())
+                        .collect(Collectors.joining(", ")));
         return authentication;
     }
 
