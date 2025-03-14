@@ -98,6 +98,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/new-org/**").permitAll() // Allow organization registration
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/dashboard").permitAll()
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

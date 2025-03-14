@@ -5,6 +5,7 @@ import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -15,6 +16,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Service responsible for JWT token operations.
@@ -36,6 +38,8 @@ public class JwtTokenProvider {
     @Value("${app.jwt.refresh-expiration:604800000}")
     private int refreshTokenExpirationMs;
 
+    // Token blacklist to store invalidated tokens
+    private final Map<String, Date> blacklistedTokens = new ConcurrentHashMap<>();
 
     /**
      * Get the signing key for JWT
@@ -154,9 +158,52 @@ public class JwtTokenProvider {
     }
 
     /**
+     * Blacklist a token
+     * @param token The token to blacklist
+     */
+    public void blacklistToken(String token) {
+        try {
+            // Get the expiration date to know how long to keep it in the blacklist
+            Date expiry = getExpirationDateFromToken(token);
+            blacklistedTokens.put(token, expiry);
+            logger.info("Token blacklisted");
+        } catch (Exception e) {
+            logger.warn("Could not blacklist token: {}", e.getMessage());
+            // If we can't parse the token, blacklist it anyway with a default expiry
+            blacklistedTokens.put(token, new Date(System.currentTimeMillis() + jwtExpirationInMs));
+        }
+    }
+
+    /**
+     * Check if a token is blacklisted
+     * @param token The token to check
+     * @return True if the token is blacklisted
+     */
+    public boolean isTokenBlacklisted(String token) {
+        return blacklistedTokens.containsKey(token);
+    }
+
+    /**
+     * Clean up expired blacklisted tokens to prevent memory leaks
+     * Runs every hour to remove expired tokens from the blacklist
+     */
+    @Scheduled(fixedRate = 3600000) // Run every hour
+    public void cleanupBlacklist() {
+        Date now = new Date();
+        blacklistedTokens.entrySet().removeIf(entry -> entry.getValue().before(now));
+        logger.debug("Cleaned up token blacklist, remaining size: {}", blacklistedTokens.size());
+    }
+
+    /**
      * Validate a token
      */
     public boolean validateToken(String authToken) {
+        // First check if the token is blacklisted
+        if (isTokenBlacklisted(authToken)) {
+            logger.warn("Token is blacklisted");
+            return false;
+        }
+
         try {
             Jwts.parserBuilder()
                     .setSigningKey(getSigningKey())
