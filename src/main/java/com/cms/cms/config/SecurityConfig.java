@@ -92,6 +92,9 @@ public class SecurityConfig {
                 // Configure URL-based authorization
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/forgot-password").permitAll()
+                        .requestMatchers("/api/auth/validate-reset-token").permitAll()
+                        .requestMatchers("/api/auth/reset-password").permitAll()
                         .requestMatchers("/api/admin/**").permitAll()
                         .requestMatchers("/api/**").permitAll()
 
