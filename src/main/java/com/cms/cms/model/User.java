@@ -6,7 +6,7 @@ import lombok.Data;
 import java.util.Set;
 
 @Entity
-@Table(name = "users")
+@Table(name = "admins")
 @Data
 public class User {
     @Id

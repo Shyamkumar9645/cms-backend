@@ -1,4 +1,3 @@
-// src/main/java/com/cms/cms/controller/AdminOrderController.java - Optimized version
 package com.cms.cms.controller;
 
 import com.cms.cms.model.Order;
@@ -9,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
@@ -25,6 +23,7 @@ public class AdminOrderController {
     @Autowired
     private OrgOrderService orgOrderService;
 
+    // Get orders for company
     @GetMapping("/company/{companyId}/orders")
     public ResponseEntity<?> getOrdersForCompany(@PathVariable Long companyId) {
         logger.info("Fetching orders for company ID: {}", companyId);
@@ -51,30 +50,7 @@ public class AdminOrderController {
         }
     }
 
-    @GetMapping("/orders/{orgId}")
-    public ResponseEntity<?> getOrdersForOrg(@PathVariable Long orgId) {
-        logger.info("Fetching orders for organization ID: {}", orgId);
-        try {
-            if (orgId == null || orgId <= 0) {
-                logger.warn("Invalid organization ID: {}", orgId);
-                return ResponseEntity.badRequest().body(createErrorResponse("Invalid organization ID"));
-            }
-
-            List<Order> orders = orgOrderService.getOrdersByOrgId(Math.toIntExact(orgId));
-
-            if (orders == null || orders.isEmpty()) {
-                logger.info("No orders found for organization ID: {}", orgId);
-                return ResponseEntity.ok(Collections.emptyList());
-            }
-
-            return ResponseEntity.ok(orders);
-        } catch (Exception e) {
-            logger.error("Error getting orders for organization ID: {}", orgId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(createErrorResponse("An error occurred: " + e.getMessage()));
-        }
-    }
-
+    // Get specific order details
     @GetMapping("/orders/{orgId}/{orderId}")
     public ResponseEntity<?> getOrderDetails(@PathVariable Long orgId, @PathVariable Long orderId) {
         logger.info("Fetching order details for orderId: {}, orgId: {}", orderId, orgId);
@@ -98,6 +74,7 @@ public class AdminOrderController {
         }
     }
 
+    // Submit new order
     @PostMapping("/orders/submit")
     public ResponseEntity<?> submitOrders(@Valid @RequestBody Order order) {
         logger.info("Submitting new order for orgId: {}", order.getOrgId());
@@ -127,6 +104,7 @@ public class AdminOrderController {
         }
     }
 
+    // Update order (original method with ID in path)
     @PutMapping("/orders/{orderId}")
     public ResponseEntity<?> updateOrder(@PathVariable Long orderId, @Valid @RequestBody Order order) {
         logger.info("Updating order ID: {}", orderId);
@@ -148,6 +126,67 @@ public class AdminOrderController {
             return ResponseEntity.ok(updatedOrder);
         } catch (Exception e) {
             logger.error("Error updating order ID: {}", orderId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("An error occurred: " + e.getMessage()));
+        }
+    }
+
+    // Update order with company ID in path
+    @PutMapping("/orders/{companyId}/{orderId}")
+    public ResponseEntity<?> updateOrderWithCompanyId(
+            @PathVariable Long companyId,
+            @PathVariable Long orderId,
+            @Valid @RequestBody Order order) {
+
+        logger.info("Updating order ID: {} for company ID: {}", orderId, companyId);
+        try {
+            // Set IDs from path if not provided in the body
+            if (order.getId() == null) {
+                order.setId(orderId);
+                logger.info("Setting order ID from path: {}", orderId);
+            } else if (!orderId.equals(order.getId())) {
+                logger.warn("Order ID mismatch: path ID {} vs body ID {}", orderId, order.getId());
+                return ResponseEntity.badRequest().body(createErrorResponse("Order ID mismatch"));
+            }
+
+            if (order.getOrgId() == null) {
+                order.setOrgId(Math.toIntExact(companyId));
+                logger.info("Setting organization ID from path: {}", companyId);
+            } else if (!companyId.equals(Long.valueOf(order.getOrgId()))) {
+                logger.warn("Company ID mismatch: path ID {} vs body ID {}", companyId, order.getOrgId());
+                return ResponseEntity.badRequest().body(createErrorResponse("Company ID mismatch"));
+            }
+
+            // Validate required fields
+            if (order.getProductName() == null || order.getProductName().isEmpty()) {
+                return ResponseEntity.badRequest().body(createErrorResponse("Product name is required"));
+            }
+
+            if (order.getQuantity() == null) {
+                return ResponseEntity.badRequest().body(createErrorResponse("Quantity is required"));
+            }
+
+            // Log the order data before updating
+            logger.info("Updating order with data: id={}, orgId={}, status={}, productName={}, quantity={}",
+                    order.getId(), order.getOrgId(), order.getStatus(),
+                    order.getProductName(), order.getQuantity());
+
+            // Use the service to update the order
+            Order updatedOrder = orgOrderService.updateOrder(order, order.getOrgId());
+
+            // Log the updated order details
+            logger.info("Order updated successfully: id={}, status={}",
+                    updatedOrder.getId(), updatedOrder.getStatus());
+
+            // Return the complete updated order to the frontend
+            return ResponseEntity.ok(updatedOrder);
+        } catch (SecurityException e) {
+            // Handle authorization errors specifically
+            logger.error("Security exception updating order: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(createErrorResponse("Not authorized: " + e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error updating order ID: {} for company ID: {}", orderId, companyId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(createErrorResponse("An error occurred: " + e.getMessage()));
         }

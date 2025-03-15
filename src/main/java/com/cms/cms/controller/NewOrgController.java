@@ -48,6 +48,17 @@ public class NewOrgController {
         }
     }
 
+    // Add this endpoint to NewOrgController
+    @PutMapping("/{id}")
+    public ResponseEntity<NewOrg> updateOrganization(@PathVariable Long id, @Valid @RequestBody NewOrg orgDetails) {
+        try {
+            NewOrg updatedOrg = newOrgService.updateOrganization(id, orgDetails);
+            return new ResponseEntity<>(updatedOrg, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     // Create new organization (your existing endpoint)
     @PostMapping("/submit")
     public ResponseEntity<?> submitNewOrg(@Valid @RequestBody NewOrg newOrg) {

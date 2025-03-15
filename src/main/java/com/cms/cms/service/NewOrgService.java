@@ -13,4 +13,6 @@ public interface NewOrgService {
 
     // Get an organization by ID
     NewOrg getOrganizationById(Long id);
+
+    NewOrg updateOrganization(Long id, NewOrg orgDetails);
 }
