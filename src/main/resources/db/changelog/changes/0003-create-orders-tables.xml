@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+
+    <!-- Create orders table -->
+    <changeSet id="create-orders-table" author="app-developer">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="orders"/>
+            </not>
+        </preConditions>
+        <createTable tableName="orders">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="organization_id" type="INTEGER">
+                <constraints nullable="true"/>
+            </column>
+            <column name="status" type="VARCHAR(50)" defaultValue="Pending">
+                <constraints nullable="false"/>
+            </column>
+            <column name="total_amount" type="DECIMAL(12,2)"/>
+            <column name="shipping_address" type="TEXT"/>
+            <column name="expected_delivery" type="TIMESTAMP"/>
+            <column name="tracking_number" type="VARCHAR(255)"/>
+            <column name="order_id" type="VARCHAR(50)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="prn_no" type="VARCHAR(255)"/>
+            <column name="created_at" type="VARCHAR(255)"/>
+            <column name="product_name" type="VARCHAR(255)"/>
+            <column name="brand" type="VARCHAR(255)"/>
+            <column name="type" type="VARCHAR(255)"/>
+            <column name="unit_type" type="VARCHAR(255)"/>
+            <column name="batch_size_strips" type="INTEGER"/>
+            <column name="unit" type="VARCHAR(255)"/>
+            <column name="batch_size_tabs" type="INTEGER"/>
+            <column name="mrp" type="DECIMAL(10,2)"/>
+            <column name="size_code" type="VARCHAR(255)"/>
+            <column name="pvc_color" type="VARCHAR(255)"/>
+            <column name="packing_size" type="VARCHAR(255)"/>
+            <column name="rate" type="DECIMAL(10,2)"/>
+            <column name="remarks" type="TEXT"/>
+            <column name="cylinder_charges" type="DECIMAL(10,2)"/>
+            <column name="dpco_mrp" type="DECIMAL(10,2)"/>
+            <column name="composition" type="TEXT"/>
+            <column name="quantity" type="INTEGER"/>
+            <column name="price" type="DECIMAL(10,2)"/>
+        </createTable>
+    </changeSet>
+
+    <!-- Create order_items table -->
+    <changeSet id="create-order-items-table" author="app-developer">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="order_items"/>
+            </not>
+        </preConditions>
+        <createTable tableName="order_items">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="order_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="product_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="product_description" type="TEXT"/>
+            <column name="unit_price" type="DECIMAL(12,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantity" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="order_items" baseColumnNames="order_id"
+                                 constraintName="fk_order_items_order"
+                                 referencedTableName="orders"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+
+</databaseChangeLog>
