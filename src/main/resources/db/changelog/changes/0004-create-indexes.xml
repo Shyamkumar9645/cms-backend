@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+
+    <!-- Create indexes for improved query performance -->
+    <changeSet id="create-indexes" author="app-developer">
+        <!-- Organizations indexes -->
+        <createIndex indexName="idx_org_web_username" tableName="organizations">
+            <column name="web_uname"/>
+        </createIndex>
+        <createIndex indexName="idx_org_status" tableName="organizations">
+            <column name="status"/>
+        </createIndex>
+
+        <!-- Users indexes -->
+        <createIndex indexName="idx_users_username" tableName="users">
+            <column name="username"/>
+        </createIndex>
+        <createIndex indexName="idx_users_email" tableName="users">
+            <column name="email"/>
+        </createIndex>
+
+        <!-- Orders indexes -->
+        <createIndex indexName="idx_orders_org_id" tableName="orders">
+            <column name="organization_id"/>
+        </createIndex>
+        <createIndex indexName="idx_orders_status" tableName="orders">
+            <column name="status"/>
+        </createIndex>
+        <createIndex indexName="idx_orders_order_id" tableName="orders">
+            <column name="order_id"/>
+        </createIndex>
+        <createIndex indexName="idx_orders_created_at" tableName="orders">
+            <column name="created_at"/>
+        </createIndex>
+
+        <!-- Order items indexes -->
+        <createIndex indexName="idx_order_items_order_id" tableName="order_items">
+            <column name="order_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

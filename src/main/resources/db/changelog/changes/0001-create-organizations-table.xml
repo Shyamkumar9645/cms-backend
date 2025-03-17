@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+
+    <!-- Create organizations table -->
+    <changeSet id="create-organizations-table" author="app-developer">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="organizations"/>
+            </not>
+        </preConditions>
+        <createTable tableName="organizations">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="org_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="constitution" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="address1" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="city" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="zip" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="gst" type="VARCHAR(255)"/>
+            <column name="pan" type="VARCHAR(255)"/>
+            <column name="drug1" type="VARCHAR(255)"/>
+            <column name="drug2" type="VARCHAR(255)"/>
+            <column name="rep_fname" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rep_lname" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rep_email" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rep_aadhar" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rep_number" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="web_uname" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="web_password" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+            <column name="status" type="VARCHAR(255)" defaultValue="Processing"/>
+        </createTable>
+    </changeSet>
+
+    <!-- Create organization_credentials table -->
+    <changeSet id="create-organization-credentials-table" author="app-developer">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="organization_credentials"/>
+            </not>
+        </preConditions>
+        <createTable tableName="organization_credentials">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="org_id" type="INTEGER"/>
+            <column name="username" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="password" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>
