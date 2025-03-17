@@ -6,11 +6,17 @@ import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,26 +29,70 @@ public class AdminOrderController {
     @Autowired
     private OrgOrderService orgOrderService;
 
-    // Get orders for company
+    /**
+     * Get orders for company with pagination and filtering
+     */
     @GetMapping("/company/{companyId}/orders")
-    public ResponseEntity<?> getOrdersForCompany(@PathVariable Long companyId) {
-        logger.info("Fetching orders for company ID: {}", companyId);
+    public ResponseEntity<?> getOrdersForCompany(
+            @PathVariable Long companyId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(defaultValue = "date") String sort,
+            @RequestParam(defaultValue = "desc") String direction
+    ) {
+        logger.info("Fetching orders for company ID: {} with pagination and filtering", companyId);
         try {
             if (companyId == null || companyId <= 0) {
                 logger.warn("Invalid company ID: {}", companyId);
                 return ResponseEntity.badRequest().body(createErrorResponse("Invalid company ID"));
             }
 
-            List<Order> orders = orgOrderService.getOrdersByOrgId(Math.toIntExact(companyId));
+            // Create Pageable with sorting
+            Pageable pageable = PageRequest.of(
+                    page,
+                    size,
+                    Sort.Direction.fromString(direction),
+                    sort
+            );
 
-            // Return empty array instead of 404 when no orders found
-            if (orders == null || orders.isEmpty()) {
-                logger.info("No orders found for company ID: {}", companyId);
-                return ResponseEntity.ok(Collections.emptyList());
+            // Create filter map
+            Map<String, Object> filters = new HashMap<>();
+            if (search != null && !search.trim().isEmpty()) {
+                filters.put("search", search.trim());
+            }
+            if (status != null && !status.trim().isEmpty() && !status.equalsIgnoreCase("all")) {
+                filters.put("status", status.trim());
+            }
+            if (startDate != null) {
+                filters.put("startDate", startDate);
+            }
+            if (endDate != null) {
+                filters.put("endDate", endDate);
+            }
+            if (minPrice != null) {
+                filters.put("minPrice", minPrice);
+            }
+            if (maxPrice != null) {
+                filters.put("maxPrice", maxPrice);
             }
 
-            logger.info("Successfully retrieved {} orders for company ID: {}", orders.size(), companyId);
-            return ResponseEntity.ok(orders);
+            // Get paginated and filtered orders
+            Page<Order> ordersPage = orgOrderService.getOrdersByOrgIdWithFilters(
+                    Math.toIntExact(companyId),
+                    filters,
+                    pageable
+            );
+
+            logger.info("Successfully retrieved {} orders for company ID: {}",
+                    ordersPage.getNumberOfElements(), companyId);
+
+            return ResponseEntity.ok(ordersPage);
         } catch (Exception e) {
             logger.error("Error getting orders for company ID: {}", companyId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -50,7 +100,7 @@ public class AdminOrderController {
         }
     }
 
-    // Get specific order details
+    // Get specific order details (existing method)
     @GetMapping("/orders/{orgId}/{orderId}")
     public ResponseEntity<?> getOrderDetails(@PathVariable Long orgId, @PathVariable Long orderId) {
         logger.info("Fetching order details for orderId: {}, orgId: {}", orderId, orgId);
@@ -74,7 +124,7 @@ public class AdminOrderController {
         }
     }
 
-    // Submit new order
+    // Submit new order (existing method)
     @PostMapping("/orders/submit")
     public ResponseEntity<?> submitOrders(@Valid @RequestBody Order order) {
         logger.info("Submitting new order for orgId: {}", order.getOrgId());
@@ -104,34 +154,7 @@ public class AdminOrderController {
         }
     }
 
-    // Update order (original method with ID in path)
-    @PutMapping("/orders/{orderId}")
-    public ResponseEntity<?> updateOrder(@PathVariable Long orderId, @Valid @RequestBody Order order) {
-        logger.info("Updating order ID: {}", orderId);
-        try {
-            // Ensure the path ID matches the order ID
-            if (orderId == null || !orderId.equals(order.getId())) {
-                logger.warn("Order ID mismatch: path ID {} vs body ID {}", orderId, order.getId());
-                return ResponseEntity.badRequest().body(createErrorResponse("Order ID mismatch"));
-            }
-
-            // Make sure orgId is set
-            if (order.getOrgId() == null) {
-                logger.warn("Missing organization ID in order update");
-                return ResponseEntity.badRequest().body(createErrorResponse("Organization ID is required"));
-            }
-
-            Order updatedOrder = orgOrderService.updateOrder(order, order.getOrgId());
-            logger.info("Order updated successfully: {}", updatedOrder.getId());
-            return ResponseEntity.ok(updatedOrder);
-        } catch (Exception e) {
-            logger.error("Error updating order ID: {}", orderId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(createErrorResponse("An error occurred: " + e.getMessage()));
-        }
-    }
-
-    // Update order with company ID in path
+    // Update order (existing method)
     @PutMapping("/orders/{companyId}/{orderId}")
     public ResponseEntity<?> updateOrderWithCompanyId(
             @PathVariable Long companyId,
