@@ -56,8 +56,11 @@ public class Order {
     @Column(name = "prn_no")
     private String prnNo;
 
-    @Column(name = "created_at")
+    @CreationTimestamp
+    @Column(name = "order_date")
     private String date;
+
+
     @Column(name = "product_name")
     private String productName;
 

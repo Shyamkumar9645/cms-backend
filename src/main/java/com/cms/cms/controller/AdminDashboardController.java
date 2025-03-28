@@ -8,16 +8,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.WeekFields;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -135,52 +131,55 @@ public class AdminDashboardController {
     }
 
     /**
-     * Get sales data for chart
+     * Get sales data for chart with support for different time periods
+     * @param period The time period: daily, weekly, monthly, or yearly (default: monthly)
      */
     @GetMapping("/sales-data")
-    public ResponseEntity<?> getSalesData() {
-        logger.info("Fetching sales data for dashboard chart");
+    public ResponseEntity<?> getSalesData(@RequestParam(required = false, defaultValue = "monthly") String period) {
+        logger.info("Fetching sales data for dashboard chart with period: {}", period);
         try {
             // Get all orders
             List<Order> allOrders = orderRepository.findAll();
+            logger.info("Total orders found: {}", allOrders.size());
 
-            // Group orders by month
-            Map<String, BigDecimal> monthlySales = new HashMap<>();
-
-            // Process each order
-            for (Order order : allOrders) {
-                if (order.getTotalAmount() == null) continue;
-
-                // Extract month from date
-                String month = extractMonthFromDate(order.getDate());
-
-                // Add to monthly sales
-                monthlySales.put(
-                        month,
-                        monthlySales.getOrDefault(month, BigDecimal.ZERO).add(order.getTotalAmount())
-                );
+            // Log a sample order if available
+            if (!allOrders.isEmpty()) {
+                Order sampleOrder = allOrders.get(0);
+                logger.info("Sample order - ID: {}, Date: {}, Amount: {}",
+                        sampleOrder.getId(), sampleOrder.getDate(), sampleOrder.getTotalAmount());
             }
 
-            // If no data, generate sample data
-            if (monthlySales.isEmpty()) {
-                return ResponseEntity.ok(generateSampleSalesData());
+            // Filter out orders with null totalAmount
+            List<Order> validOrders = allOrders.stream()
+                    .filter(order -> order.getTotalAmount() != null)
+                    .collect(Collectors.toList());
+
+            logger.info("Orders with valid amounts: {}", validOrders.size());
+
+            if (validOrders.isEmpty()) {
+                logger.info("No valid orders found for sales data");
+                return ResponseEntity.ok(new ArrayList<>());
             }
 
-            // Convert to chart format
-            List<Map<String, Object>> chartData = new ArrayList<>();
-
-            // Sort months
-            List<String> sortedMonths = new ArrayList<>(monthlySales.keySet());
-            Collections.sort(sortedMonths);
-
-            // Create chart data points
-            for (String month : sortedMonths) {
-                Map<String, Object> dataPoint = new HashMap<>();
-                dataPoint.put("name", month);
-                dataPoint.put("value", monthlySales.get(month).intValue() / 1000); // Convert to thousands
-                chartData.add(dataPoint);
+            // Process based on period
+            List<Map<String, Object>> chartData;
+            switch (period.toLowerCase()) {
+                case "daily":
+                    chartData = getDailySalesData(validOrders);
+                    break;
+                case "weekly":
+                    chartData = getWeeklySalesData(validOrders);
+                    break;
+                case "yearly":
+                    chartData = getYearlySalesData(validOrders);
+                    break;
+                case "monthly":
+                default:
+                    chartData = getMonthlySalesData(validOrders);
+                    break;
             }
 
+            logger.info("Returning {} data points for period: {}", chartData.size(), period);
             return ResponseEntity.ok(chartData);
 
         } catch (Exception e) {
@@ -190,18 +189,257 @@ public class AdminDashboardController {
     }
 
     /**
-     * Helper to extract month from date string
+     * Parse date string from database format
+     * Handles both formats: "2025-03-20 22:38:18.752437" and "dd MMM yyyy"
      */
-    private String extractMonthFromDate(String dateStr) {
-        try {
-            // Try to parse the date string
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy");
-            LocalDate date = LocalDate.parse(dateStr, formatter);
-            return date.getMonth().toString().substring(0, 3);
-        } catch (Exception e) {
-            // If parsing fails, return current month
-            return LocalDate.now().getMonth().toString().substring(0, 3);
+    private LocalDate parseOrderDate(String dateStr) {
+        if (dateStr == null || dateStr.trim().isEmpty()) {
+            return null;
         }
+
+        try {
+            // Try to parse as ISO format (2025-03-20 22:38:18.752437)
+            if (dateStr.contains("-")) {
+                // Extract just the date part if there's a time component
+                String datePart = dateStr.split(" ")[0];
+                return LocalDate.parse(datePart);
+            }
+            // Try to parse as "dd MMM yyyy" format
+            else {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy");
+                return LocalDate.parse(dateStr, formatter);
+            }
+        } catch (Exception e) {
+            logger.warn("Could not parse date: {} - {}", dateStr, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Get daily sales data for the past 7 days
+     */
+    private List<Map<String, Object>> getDailySalesData(List<Order> orders) {
+        logger.info("Processing daily sales data");
+
+        // Calculate the date range (last 7 days)
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(6); // 7 days including today
+
+        // Map to store daily sales
+        Map<LocalDate, BigDecimal> dailySales = new TreeMap<>();
+
+        // Initialize all dates in range with zero
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            dailySales.put(date, BigDecimal.ZERO);
+        }
+
+        // Count orders with valid dates
+        int validOrderCount = 0;
+
+        // Aggregate sales by day
+        for (Order order : orders) {
+            LocalDate orderDate = parseOrderDate(order.getDate());
+
+            if (orderDate != null) {
+                validOrderCount++;
+
+                // Only include orders in our date range
+                if (!orderDate.isBefore(startDate) && !orderDate.isAfter(endDate)) {
+                    dailySales.put(
+                            orderDate,
+                            dailySales.getOrDefault(orderDate, BigDecimal.ZERO).add(order.getTotalAmount())
+                    );
+                }
+            }
+        }
+
+        logger.info("Found {} orders with valid dates out of {} total for daily view", validOrderCount, orders.size());
+
+        // Convert to chart format
+        List<Map<String, Object>> chartData = new ArrayList<>();
+        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("EEE, MMM d"); // e.g., "Mon, Jan 1"
+
+        for (Map.Entry<LocalDate, BigDecimal> entry : dailySales.entrySet()) {
+            Map<String, Object> dataPoint = new HashMap<>();
+            dataPoint.put("name", entry.getKey().format(outputFormatter));
+            dataPoint.put("value", entry.getValue().intValue()); // Use actual value
+            chartData.add(dataPoint);
+        }
+
+        return chartData;
+    }
+
+    /**
+     * Get weekly sales data for the past 4-5 weeks
+     */
+    private List<Map<String, Object>> getWeeklySalesData(List<Order> orders) {
+        logger.info("Processing weekly sales data");
+
+        // Calculate the date range (last 4 weeks)
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusWeeks(4);
+
+        // Map to store weekly sales (key: year-week)
+        Map<String, BigDecimal> weeklySales = new TreeMap<>();
+
+        // Initialize all weeks in range with zero
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusWeeks(1)) {
+            int year = date.getYear();
+            int weekOfYear = date.get(WeekFields.ISO.weekOfYear());
+            String weekKey = String.format("%d-W%02d", year, weekOfYear);
+            weeklySales.put(weekKey, BigDecimal.ZERO);
+        }
+
+        // Count orders with valid dates
+        int validOrderCount = 0;
+
+        // Aggregate sales by week
+        for (Order order : orders) {
+            LocalDate orderDate = parseOrderDate(order.getDate());
+
+            if (orderDate != null) {
+                validOrderCount++;
+
+                // Only include orders in reasonable time frame (last 6 months)
+                if (orderDate.isAfter(endDate.minusMonths(6))) {
+                    int year = orderDate.getYear();
+                    int weekOfYear = orderDate.get(WeekFields.ISO.weekOfYear());
+                    String weekKey = String.format("%d-W%02d", year, weekOfYear);
+
+                    // Only add to existing weeks in our map (last 4 weeks)
+                    if (weeklySales.containsKey(weekKey)) {
+                        weeklySales.put(
+                                weekKey,
+                                weeklySales.get(weekKey).add(order.getTotalAmount())
+                        );
+                    }
+                }
+            }
+        }
+
+        logger.info("Found {} orders with valid dates out of {} total for weekly view", validOrderCount, orders.size());
+
+        // Convert to chart format
+        List<Map<String, Object>> chartData = new ArrayList<>();
+
+        for (Map.Entry<String, BigDecimal> entry : weeklySales.entrySet()) {
+            Map<String, Object> dataPoint = new HashMap<>();
+            dataPoint.put("name", entry.getKey().replace("-", " ")); // Format: "2023 W01"
+            dataPoint.put("value", entry.getValue().intValue()); // Use actual value
+            chartData.add(dataPoint);
+        }
+
+        return chartData;
+    }
+
+    /**
+     * Get monthly sales data for the current year
+     */
+    private List<Map<String, Object>> getMonthlySalesData(List<Order> orders) {
+        logger.info("Processing monthly sales data");
+
+        // Map to store monthly sales
+        Map<String, BigDecimal> monthlySales = new TreeMap<>();
+
+        // Initialize all months with zero (for current year)
+        int currentYear = LocalDate.now().getYear();
+        String[] monthAbbreviations = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+
+        for (String month : monthAbbreviations) {
+            monthlySales.put(month, BigDecimal.ZERO);
+        }
+
+        // Count orders with valid dates
+        int validOrderCount = 0;
+
+        // Aggregate sales by month
+        for (Order order : orders) {
+            LocalDate orderDate = parseOrderDate(order.getDate());
+
+            if (orderDate != null) {
+                validOrderCount++;
+
+                // Only include orders from current year
+                if (orderDate.getYear() == currentYear) {
+                    // Get month abbreviation (Jan, Feb, etc.)
+                    String month = orderDate.getMonth().toString().substring(0, 3);
+
+                    monthlySales.put(
+                            month,
+                            monthlySales.getOrDefault(month, BigDecimal.ZERO).add(order.getTotalAmount())
+                    );
+                }
+            }
+        }
+
+        logger.info("Found {} orders with valid dates out of {} total for monthly view", validOrderCount, orders.size());
+
+        // Convert to chart format
+        List<Map<String, Object>> chartData = new ArrayList<>();
+
+        for (Map.Entry<String, BigDecimal> entry : monthlySales.entrySet()) {
+            Map<String, Object> dataPoint = new HashMap<>();
+            dataPoint.put("name", entry.getKey());
+            dataPoint.put("value", entry.getValue().intValue()); // Use actual value
+            chartData.add(dataPoint);
+        }
+
+        return chartData;
+    }
+
+    /**
+     * Get yearly sales data for the past 3 years
+     */
+    private List<Map<String, Object>> getYearlySalesData(List<Order> orders) {
+        logger.info("Processing yearly sales data");
+
+        // Calculate the years to include (current year and 2 previous)
+        int currentYear = LocalDate.now().getYear();
+        int startYear = currentYear - 2;
+
+        // Map to store yearly sales
+        Map<Integer, BigDecimal> yearlySales = new TreeMap<>();
+
+        // Initialize years with zero
+        for (int year = startYear; year <= currentYear; year++) {
+            yearlySales.put(year, BigDecimal.ZERO);
+        }
+
+        // Count orders with valid dates
+        int validOrderCount = 0;
+
+        // Aggregate sales by year
+        for (Order order : orders) {
+            LocalDate orderDate = parseOrderDate(order.getDate());
+
+            if (orderDate != null) {
+                validOrderCount++;
+
+                int year = orderDate.getYear();
+
+                // Only include orders in our year range
+                if (year >= startYear && year <= currentYear) {
+                    yearlySales.put(
+                            year,
+                            yearlySales.getOrDefault(year, BigDecimal.ZERO).add(order.getTotalAmount())
+                    );
+                }
+            }
+        }
+
+        logger.info("Found {} orders with valid dates out of {} total for yearly view", validOrderCount, orders.size());
+
+        // Convert to chart format
+        List<Map<String, Object>> chartData = new ArrayList<>();
+
+        for (Map.Entry<Integer, BigDecimal> entry : yearlySales.entrySet()) {
+            Map<String, Object> dataPoint = new HashMap<>();
+            dataPoint.put("name", entry.getKey().toString());
+            dataPoint.put("value", entry.getValue().intValue()); // Use actual value
+            chartData.add(dataPoint);
+        }
+
+        return chartData;
     }
 
     /**
@@ -212,63 +450,5 @@ public class AdminDashboardController {
         // For now, we're using hardcoded example values
         String direction = changePercent >= 0 ? "Up" : "Down";
         return Math.abs(changePercent) + "% " + direction + " from yesterday";
-    }
-
-    /**
-     * Generate sample sales data for chart when no real data exists
-     */
-    private List<Map<String, Object>> generateSampleSalesData() {
-        List<Map<String, Object>> sampleData = new ArrayList<>();
-        String[] months = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-        Random random = new Random();
-
-        for (String month : months) {
-            Map<String, Object> dataPoint = new HashMap<>();
-            dataPoint.put("name", month);
-            dataPoint.put("value", 20 + random.nextInt(80)); // Random value between 20 and 100
-            sampleData.add(dataPoint);
-        }
-
-        return sampleData;
-    }
-
-    /**
-     * Generate sample orders for testing when the database is empty
-     */
-    private List<Order> generateSampleOrders(int count) {
-        List<Order> sampleOrders = new ArrayList<>();
-        Random random = new Random();
-        String[] productNames = {"Pain Relief Tablet", "Cough Syrup", "Antibiotic Capsule", "Vitamin Complex",
-                "Blood Pressure Medicine", "Antacid", "Insulin", "Allergy Medication"};
-        String[] brands = {"Pharma Plus", "MediLife", "HealthCare", "VitaWell", "MediCorp"};
-        String[] statuses = {"Pending", "Processing", "Completed", "Shipped", "Delivered"};
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy");
-
-        for (int i = 0; i < count; i++) {
-            Order order = new Order();
-            order.setId((long) (i + 1));
-            order.setOrderId("ORD-" + (1000 + i));
-            order.setOrgId(random.nextInt(5) + 1); // Random org ID between 1 and 5
-            order.setProductName(productNames[random.nextInt(productNames.length)]);
-            order.setBrand(brands[random.nextInt(brands.length)]);
-            order.setStatus(statuses[random.nextInt(statuses.length)]);
-
-            // Set date to a recent date
-            LocalDate date = LocalDate.now().minusDays(random.nextInt(60));
-            order.setDate(date.format(formatter));
-
-            // Set price and quantity
-            BigDecimal price = BigDecimal.valueOf(100 + random.nextInt(900));
-            int quantity = 10 + random.nextInt(90);
-            order.setPrice(price);
-            order.setQuantity(quantity);
-
-            // Set total amount
-            order.setTotalAmount(price.multiply(BigDecimal.valueOf(quantity)));
-
-            sampleOrders.add(order);
-        }
-
-        return sampleOrders;
     }
 }

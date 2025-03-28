@@ -107,7 +107,7 @@ public class OrgOrderServiceImpl implements OrgOrderService {
 
         // Date range filters
         if (filters.containsKey("startDate") || filters.containsKey("endDate")) {
-            LocalDate orderDate = parseOrderDate(order.getDate());
+            LocalDate orderDate = parseOrderDate(String.valueOf(order.getDate()));
             if (orderDate == null) {
                 return false;
             }
@@ -251,7 +251,7 @@ public class OrgOrderServiceImpl implements OrgOrderService {
         }
 
         // Handle date fields - keep original if not provided
-        if (order.getDate() == null || order.getDate().isEmpty()) {
+        if (order.getDate() == null ) {
             order.setDate(existingOrder.getDate());
         }
 
