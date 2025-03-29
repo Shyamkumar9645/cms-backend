@@ -45,4 +45,29 @@ public interface OrgOrderService {
      * Cancel an order for an organization
      */
     boolean cancelOrder(Long orderId, Integer orgId);
+
+    /**
+     * Get all pending orders across all organizations
+     */
+    List<Order> getAllPendingOrders();
+
+    /**
+     * Get the count of pending orders
+     */
+    long countPendingOrders();
+
+    /**
+     * Get a specific pending order by ID
+     */
+    Order getPendingOrderById(Long orderId);
+
+    /**
+     * Approve a pending order (change status to Processing)
+     */
+    Order approveOrder(Long orderId, Order orderDetails);
+
+    /**
+     * Reject a pending order
+     */
+    Order rejectOrder(Long orderId, String rejectionReason);
 }

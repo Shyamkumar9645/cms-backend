@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -251,7 +252,7 @@ public class OrgOrderServiceImpl implements OrgOrderService {
         }
 
         // Handle date fields - keep original if not provided
-        if (order.getDate() == null ) {
+        if (order.getDate() == null) {
             order.setDate(existingOrder.getDate());
         }
 
@@ -282,5 +283,98 @@ public class OrgOrderServiceImpl implements OrgOrderService {
         }
 
         return false;
+    }
+
+    // New methods for pending orders
+
+    @Override
+    public List<Order> getAllPendingOrders() {
+        logger.info("Fetching all pending orders");
+        return orderRepository.findAllPendingOrders();
+    }
+
+    @Override
+    public long countPendingOrders() {
+        logger.info("Counting pending orders");
+        return orderRepository.countPendingOrders();
+    }
+
+    @Override
+    public Order getPendingOrderById(Long orderId) {
+        logger.info("Fetching pending order with ID: {}", orderId);
+        Optional<Order> order = orderRepository.findByIdAndStatus(orderId, "Pending");
+        return order.orElse(null);
+    }
+
+    @Override
+    @Transactional
+    public Order approveOrder(Long orderId, Order orderDetails) {
+        logger.info("Approving order with ID: {}", orderId);
+
+        Optional<Order> existingOrderOpt = orderRepository.findById(orderId);
+        if (existingOrderOpt.isEmpty()) {
+            logger.error("Order {} not found", orderId);
+            throw new RuntimeException("Order not found");
+        }
+
+        Order existingOrder = existingOrderOpt.get();
+
+        // Check if the order is in Pending status
+        if (!"Pending".equals(existingOrder.getStatus())) {
+            logger.error("Cannot approve order {} - current status is {}", orderId, existingOrder.getStatus());
+            throw new RuntimeException("Only pending orders can be approved");
+        }
+
+        // Update order fields from the details provided
+        // First, preserve fields that should not be changed
+        orderDetails.setId(orderId);
+        orderDetails.setOrgId(existingOrder.getOrgId());
+        orderDetails.setOrderId(existingOrder.getOrderId());
+        orderDetails.setDate(existingOrder.getDate());
+
+        // Set the status to Processing
+        orderDetails.setStatus("Processing");
+
+        // Set expected delivery date if not provided
+        if (orderDetails.getExpectedDelivery() == null) {
+            // Default to 15 days from now
+            orderDetails.setExpectedDelivery(LocalDateTime.now().plusDays(15));
+        }
+
+        // Save the updated order
+        Order updatedOrder = orderRepository.save(orderDetails);
+        logger.info("Order {} approved and status updated to Processing", orderId);
+
+        return updatedOrder;
+    }
+
+    @Override
+    @Transactional
+    public Order rejectOrder(Long orderId, String rejectionReason) {
+        logger.info("Rejecting order with ID: {}", orderId);
+
+        Optional<Order> existingOrderOpt = orderRepository.findById(orderId);
+        if (existingOrderOpt.isEmpty()) {
+            logger.error("Order {} not found", orderId);
+            throw new RuntimeException("Order not found");
+        }
+
+        Order existingOrder = existingOrderOpt.get();
+
+        // Check if the order is in Pending status
+        if (!"Pending".equals(existingOrder.getStatus())) {
+            logger.error("Cannot reject order {} - current status is {}", orderId, existingOrder.getStatus());
+            throw new RuntimeException("Only pending orders can be rejected");
+        }
+
+        // Update the status and add rejection reason
+        existingOrder.setStatus("Rejected");
+        existingOrder.setRemarks(rejectionReason);
+
+        // Save the updated order
+        Order updatedOrder = orderRepository.save(existingOrder);
+        logger.info("Order {} rejected with reason: {}", orderId, rejectionReason);
+
+        return updatedOrder;
     }
 }

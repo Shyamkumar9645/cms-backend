@@ -39,18 +39,14 @@ public class Order {
     @Column(name = "order_id", nullable = false, unique = true)
     private String orderId;
 
-
-
     @PrePersist
     protected void onCreate() {
         if (orderId == null) {
             // Generate a unique ID - temporary implementation
             // In production, you'd use a more robust method
             orderId = "ORD-" + System.currentTimeMillis();
-
         }
     }
-
 
     // New fields from the form
     @Column(name = "prn_no")
@@ -59,7 +55,6 @@ public class Order {
     @CreationTimestamp
     @Column(name = "order_date")
     private String date;
-
 
     @Column(name = "product_name")
     private String productName;
@@ -115,5 +110,18 @@ public class Order {
     @Column(name = "price", precision = 10, scale = 2)
     private BigDecimal price;
 
+    // For organization contact info
+    @Column(name = "contact_email")
+    private String contactEmail;
 
+    @Column(name = "contact_phone")
+    private String contactPhone;
+
+    // For organization name display (denormalized for convenience)
+    @Column(name = "organization_name")
+    private String organizationName;
+
+    // For rejection reason
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
 }
