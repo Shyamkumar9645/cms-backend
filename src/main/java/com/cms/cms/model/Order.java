@@ -1,5 +1,6 @@
 package com.cms.cms.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
@@ -28,6 +29,7 @@ public class Order {
     private String shippingAddress;
 
     @Column(name = "expected_delivery")
+    @JsonFormat(pattern = "yyyy-MM-dd['T'HH:mm:ss]")
     private LocalDateTime expectedDelivery;
 
     @Column(name = "tracking_number")
@@ -65,8 +67,12 @@ public class Order {
     @Column(name = "type")
     private String type;
 
+    // Added fields for consistency with OrgOrderDTO
     @Column(name = "unit_type")
     private String unitType;
+
+    @Column(name = "batch_size")
+    private String batchSize;
 
     @Column(name = "batch_size_strips")
     private Integer batchSizeStrips;
@@ -110,18 +116,6 @@ public class Order {
     @Column(name = "price", precision = 10, scale = 2)
     private BigDecimal price;
 
-    // For organization contact info
-    @Column(name = "contact_email")
-    private String contactEmail;
-
-    @Column(name = "contact_phone")
-    private String contactPhone;
-
-    // For organization name display (denormalized for convenience)
-    @Column(name = "organization_name")
-    private String organizationName;
-
-    // For rejection reason
-    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    @Column(name = "rejection_reason")
     private String rejectionReason;
 }

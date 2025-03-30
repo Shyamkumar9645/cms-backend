@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+
+    <!-- Create products table -->
+    <changeSet id="create-products-table" author="app-developer">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="products"/>
+            </not>
+        </preConditions>
+        <createTable tableName="products">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="price" type="DECIMAL(10,2)"/>
+            <column name="is_available" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+    <!-- Create product_unit_types table -->
+    <changeSet id="create-product-unit-types-table" author="app-developer">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="product_unit_types"/>
+            </not>
+        </preConditions>
+        <createTable tableName="product_unit_types">
+            <column name="product_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="unit_type" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="product_unit_types" baseColumnNames="product_id"
+                                 constraintName="fk_product_unit_types_product"
+                                 referencedTableName="products"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- Create product_batch_sizes table -->
+    <changeSet id="create-product-batch-sizes-table" author="app-developer">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="product_batch_sizes"/>
+            </not>
+        </preConditions>
+        <createTable tableName="product_batch_sizes">
+            <column name="product_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="batch_size" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="product_batch_sizes" baseColumnNames="product_id"
+                                 constraintName="fk_product_batch_sizes_product"
+                                 referencedTableName="products"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+
+    <!-- Insert sample products -->
+    <changeSet id="insert-sample-products" author="app-developer" context="demo">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM products</sqlCheck>
+        </preConditions>
+
+        <!-- Insert Paracetamol product -->
+        <insert tableName="products">
+            <column name="name">Paracetamol 500mg</column>
+            <column name="type">Medicine</column>
+            <column name="description">Pain reliever and fever reducer</column>
+            <column name="price">150.00</column>
+            <column name="is_available">true</column>
+            <column name="created_at">now()</column>
+        </insert>
+
+        <!-- Insert unit types for Paracetamol -->
+        <insert tableName="product_unit_types">
+            <column name="product_id">1</column>
+            <column name="unit_type">I</column>
+        </insert>
+        <insert tableName="product_unit_types">
+            <column name="product_id">1</column>
+            <column name="unit_type">II</column>
+        </insert>
+
+        <!-- Insert batch sizes for Paracetamol -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id">1</column>
+            <column name="batch_size">100</column>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id">1</column>
+            <column name="batch_size">500</column>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id">1</column>
+            <column name="batch_size">1000</column>
+        </insert>
+
+        <!-- Insert Amoxicillin product -->
+        <insert tableName="products">
+            <column name="name">Amoxicillin 250mg</column>
+            <column name="type">Medicine</column>
+            <column name="description">Antibiotic for bacterial infections</column>
+            <column name="price">280.00</column>
+            <column name="is_available">true</column>
+            <column name="created_at">now()</column>
+        </insert>
+
+        <!-- Insert unit types for Amoxicillin -->
+        <insert tableName="product_unit_types">
+            <column name="product_id">2</column>
+            <column name="unit_type">I</column>
+        </insert>
+        <insert tableName="product_unit_types">
+            <column name="product_id">2</column>
+            <column name="unit_type">II</column>
+        </insert>
+
+        <!-- Insert batch sizes for Amoxicillin -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id">2</column>
+            <column name="batch_size">50</column>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id">2</column>
+            <column name="batch_size">100</column>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id">2</column>
+            <column name="batch_size">500</column>
+        </insert>
+
+        <!-- Insert Vitamin C product -->
+        <insert tableName="products">
+            <column name="name">Vitamin C 1000mg</column>
+            <column name="type">Supplement</column>
+            <column name="description">Immune system booster</column>
+            <column name="price">350.00</column>
+            <column name="is_available">true</column>
+            <column name="created_at">now()</column>
+        </insert>
+
+        <!-- Insert unit types for Vitamin C -->
+        <insert tableName="product_unit_types">
+            <column name="product_id">3</column>
+            <column name="unit_type">I</column>
+        </insert>
+
+        <!-- Insert batch sizes for Vitamin C -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id">3</column>
+            <column name="batch_size">30</column>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id">3</column>
+            <column name="batch_size">60</column>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id">3</column>
+            <column name="batch_size">90</column>
+        </insert>
+    </changeSet>
+
+    <!-- Create indexes for products tables -->
+    <changeSet id="create-products-indexes" author="app-developer">
+        <createIndex indexName="idx_products_type" tableName="products">
+            <column name="type"/>
+        </createIndex>
+        <createIndex indexName="idx_products_availability" tableName="products">
+            <column name="is_available"/>
+        </createIndex>
+        <createIndex indexName="idx_product_unit_types" tableName="product_unit_types">
+            <column name="product_id"/>
+            <column name="unit_type"/>
+        </createIndex>
+        <createIndex indexName="idx_product_batch_sizes" tableName="product_batch_sizes">
+            <column name="product_id"/>
+            <column name="batch_size"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>
