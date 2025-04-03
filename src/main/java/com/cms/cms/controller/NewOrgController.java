@@ -3,6 +3,8 @@ package com.cms.cms.controller;
 import com.cms.cms.model.NewOrg;
 import com.cms.cms.service.NewOrgService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,9 +20,10 @@ import java.util.Map;
 @RequestMapping("/api/new-org")
 @CrossOrigin(origins = "*") // Enable CORS for all origins - adjust this for security
 public class NewOrgController {
-
     @Autowired
     private NewOrgService newOrgService;
+    private static final Logger logger = LoggerFactory.getLogger(NewOrgController.class);
+
 
     // Get all organizations
     @GetMapping
@@ -29,7 +32,7 @@ public class NewOrgController {
             List<NewOrg> organizations = newOrgService.getAllOrganizations();
             return new ResponseEntity<>(organizations, HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -55,6 +58,7 @@ public class NewOrgController {
             NewOrg updatedOrg = newOrgService.updateOrganization(id, orgDetails);
             return new ResponseEntity<>(updatedOrg, HttpStatus.OK);
         } catch (Exception e) {
+            logger.info("Error retrieving organizations", e);
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

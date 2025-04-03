@@ -30,4 +30,15 @@ public interface ProductService {
      * @return The product if found, null otherwise
      */
     Product getProductById(Long id);
+
+    /**
+     * Clear the entire product cache
+     */
+    void clearProductCache();
+
+    /**
+     * Clear the cache for a specific product
+     * @param id The product ID
+     */
+    void clearProductCacheById(Long id);
 }

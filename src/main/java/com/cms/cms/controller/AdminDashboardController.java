@@ -4,9 +4,11 @@ import com.cms.cms.Repository.NewOrgRepository;
 import com.cms.cms.Repository.OrderRepository;
 import com.cms.cms.model.NewOrg;
 import com.cms.cms.model.Order;
+import com.cms.cms.service.DashboardCacheService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,13 +30,26 @@ public class AdminDashboardController {
     @Autowired
     private NewOrgRepository organizationRepository;
 
+    @Autowired
+    private DashboardCacheService dashboardCacheService;
+
     /**
-     * Get dashboard summary data
+     * Get dashboard summary data with Redis caching
      */
     @GetMapping("/summary")
     public ResponseEntity<?> getDashboardSummary() {
         logger.info("Fetching dashboard summary data");
         try {
+            // Try to get from cache first
+            Map<String, Object> cachedSummary = dashboardCacheService.getDashboardSummary();
+            if (cachedSummary != null) {
+                logger.info("Returning dashboard summary from cache");
+                return ResponseEntity.ok(cachedSummary);
+            }
+
+            // Cache miss - compute and cache the summary
+            logger.info("Cache miss for dashboard summary, computing from database");
+
             // Get all organizations count
             long totalUsers = organizationRepository.count();
 
@@ -73,6 +88,9 @@ public class AdminDashboardController {
             summaryData.put("salesTrend", salesTrend);
             summaryData.put("pendingTrend", pendingTrend);
 
+            // Cache the result
+            dashboardCacheService.cacheDashboardSummary(summaryData);
+
             return ResponseEntity.ok(summaryData);
 
         } catch (Exception e) {
@@ -82,12 +100,21 @@ public class AdminDashboardController {
     }
 
     /**
-     * Get recent orders
+     * Get recent orders with caching
      */
     @GetMapping("/recent-orders")
     public ResponseEntity<?> getRecentOrders() {
         logger.info("Fetching recent orders for dashboard");
         try {
+            // Try to get from cache first
+            List<Map<String, Object>> cachedOrders = dashboardCacheService.getRecentOrders();
+            if (cachedOrders != null) {
+                logger.info("Returning recent orders from cache");
+                return ResponseEntity.ok(cachedOrders);
+            }
+
+            logger.info("Cache miss for recent orders, fetching from database");
+
             // Get all orders
             List<Order> allOrders = orderRepository.findAll();
 
@@ -122,6 +149,9 @@ public class AdminDashboardController {
                     })
                     .collect(Collectors.toList());
 
+            // Cache the result
+            dashboardCacheService.cacheRecentOrders(recentOrders);
+
             return ResponseEntity.ok(recentOrders);
 
         } catch (Exception e) {
@@ -131,13 +161,21 @@ public class AdminDashboardController {
     }
 
     /**
-     * Get sales data for chart with support for different time periods
-     * @param period The time period: daily, weekly, monthly, or yearly (default: monthly)
+     * Get sales data for chart with caching
      */
     @GetMapping("/sales-data")
     public ResponseEntity<?> getSalesData(@RequestParam(required = false, defaultValue = "monthly") String period) {
         logger.info("Fetching sales data for dashboard chart with period: {}", period);
         try {
+            // Try to get from cache first
+            List<Map<String, Object>> cachedData = dashboardCacheService.getSalesData(period);
+            if (cachedData != null) {
+                logger.info("Returning sales data from cache for period: {}", period);
+                return ResponseEntity.ok(cachedData);
+            }
+
+            logger.info("Cache miss for sales data with period: {}, fetching from database", period);
+
             // Get all orders
             List<Order> allOrders = orderRepository.findAll();
             logger.info("Total orders found: {}", allOrders.size());
@@ -179,6 +217,9 @@ public class AdminDashboardController {
                     break;
             }
 
+            // Cache the result
+            dashboardCacheService.cacheSalesData(period, chartData);
+
             logger.info("Returning {} data points for period: {}", chartData.size(), period);
             return ResponseEntity.ok(chartData);
 
@@ -189,9 +230,34 @@ public class AdminDashboardController {
     }
 
     /**
-     * Parse date string from database format
-     * Handles both formats: "2025-03-20 22:38:18.752437" and "dd MMM yyyy"
+     * Force refresh all dashboard caches
      */
+    @PostMapping("/refresh-cache")
+    public ResponseEntity<?> refreshDashboardCache() {
+        logger.info("Forced refresh of dashboard caches requested");
+        try {
+            dashboardCacheService.clearAllDashboardCaches();
+
+            // Immediately regenerate caches
+            getDashboardSummary();
+            getRecentOrders();
+            getSalesData("daily");
+            getSalesData("weekly");
+            getSalesData("monthly");
+            getSalesData("yearly");
+
+            Map<String, String> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "Dashboard caches refreshed successfully");
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Error refreshing dashboard caches", e);
+            return ResponseEntity.internalServerError().body("Error refreshing dashboard caches: " + e.getMessage());
+        }
+    }
+
+    // Existing methods for parsing dates and generating chart data...
     private LocalDate parseOrderDate(String dateStr) {
         if (dateStr == null || dateStr.trim().isEmpty()) {
             return null;
@@ -215,10 +281,8 @@ public class AdminDashboardController {
         }
     }
 
-    /**
-     * Get daily sales data for the past 7 days
-     */
     private List<Map<String, Object>> getDailySalesData(List<Order> orders) {
+        // Implementation remains the same
         logger.info("Processing daily sales data");
 
         // Calculate the date range (last 7 days)
@@ -269,10 +333,10 @@ public class AdminDashboardController {
         return chartData;
     }
 
-    /**
-     * Get weekly sales data for the past 4-5 weeks
-     */
+    // Other existing methods for weekly, monthly, yearly data and trend calculation...
     private List<Map<String, Object>> getWeeklySalesData(List<Order> orders) {
+        // Implementation remains the same
+        // ... existing implementation
         logger.info("Processing weekly sales data");
 
         // Calculate the date range (last 4 weeks)
@@ -332,10 +396,9 @@ public class AdminDashboardController {
         return chartData;
     }
 
-    /**
-     * Get monthly sales data for the current year
-     */
     private List<Map<String, Object>> getMonthlySalesData(List<Order> orders) {
+        // Implementation remains the same
+        // ... existing implementation
         logger.info("Processing monthly sales data");
 
         // Map to store monthly sales
@@ -387,10 +450,9 @@ public class AdminDashboardController {
         return chartData;
     }
 
-    /**
-     * Get yearly sales data for the past 3 years
-     */
     private List<Map<String, Object>> getYearlySalesData(List<Order> orders) {
+        // Implementation remains the same
+        // ... existing implementation
         logger.info("Processing yearly sales data");
 
         // Calculate the years to include (current year and 2 previous)
@@ -442,9 +504,6 @@ public class AdminDashboardController {
         return chartData;
     }
 
-    /**
-     * Helper to calculate trend percentage
-     */
     private String calculateTrend(double currentValue, double changePercent) {
         // In a real app, you would calculate this based on historical data
         // For now, we're using hardcoded example values

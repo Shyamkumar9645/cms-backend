@@ -1,9 +1,11 @@
 package com.cms.cms.service;
 
-
 import com.cms.cms.Repository.NewOrgRepository;
 import com.cms.cms.model.NewOrg;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +19,7 @@ public class NewOrgServiceImpl implements NewOrgService {
     private NewOrgRepository newOrgRepository;
 
     @Autowired
-    private PasswordEncoder passwordEncoder; // Use Spring's injected PasswordEncoder
+    private PasswordEncoder passwordEncoder;
 
     @Override
     public NewOrg createNewOrg(NewOrg newOrg) {
@@ -41,6 +43,7 @@ public class NewOrgServiceImpl implements NewOrgService {
     }
 
     @Override
+    @CachePut(value = "organizations", key = "#id")
     public NewOrg updateOrganization(Long id, NewOrg orgDetails) {
         Optional<NewOrg> orgData = newOrgRepository.findById(id);
 
@@ -73,5 +76,24 @@ public class NewOrgServiceImpl implements NewOrgService {
         } else {
             throw new RuntimeException("Organization not found with id " + id);
         }
+    }
+
+    @Override
+    @Cacheable(value = "organizations", key = "'byUsername:' + #username", unless = "#result == null")
+    public NewOrg findByWebsiteUsername(String username) {
+        Optional<NewOrg> org = newOrgRepository.findByWebsiteUsername(username);
+        return org.orElse(null);
+    }
+
+    @Override
+    @CacheEvict(value = "organizations", key = "#id")
+    public void deleteOrganization(Long id) {
+        newOrgRepository.deleteById(id);
+    }
+
+    @Override
+    @CacheEvict(value = "organizations", allEntries = true)
+    public void clearCache() {
+        // This method will clear all entries in the "organizations" cache
     }
 }
