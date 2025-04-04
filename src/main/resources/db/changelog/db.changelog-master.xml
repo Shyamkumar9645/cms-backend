@@ -12,6 +12,7 @@
     <include file="db/changelog/changes/0005-insert-initial-data.xml" relativeToChangelogFile="false"/>
     <include file="db/changelog/changes/0006-insert-demo-data.xml" relativeToChangelogFile="false" context="demo"/>
     <include file="db/changelog/changes/0007-insert-org-credentials.xml" relativeToChangelogFile="false"/>
-
+    <include file="db/changelog/changes/0008-create-products-table.xml" relativeToChangelogFile="false"/>
+    <include file="db/changelog/changes/0009-available-product.xml" relativeToChangelogFile="false"/>
 
 </databaseChangeLog>

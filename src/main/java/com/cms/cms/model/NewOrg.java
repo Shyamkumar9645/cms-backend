@@ -1,6 +1,5 @@
 package com.cms.cms.model;
 
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -9,6 +8,8 @@ import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "organizations")
@@ -88,4 +89,24 @@ public class NewOrg {
 
     @Column(name = "status")
     private String status;
+
+    // New relationship with products
+    @ManyToMany
+    @JoinTable(
+            name = "organization_products",
+            joinColumns = @JoinColumn(name = "organization_id"),
+            inverseJoinColumns = @JoinColumn(name = "product_id")
+    )
+    private Set<Product> products = new HashSet<>();
+
+    // Helper methods for managing the relationship
+    public void addProduct(Product product) {
+        this.products.add(product);
+        product.getOrganizations().add(this);
+    }
+
+    public void removeProduct(Product product) {
+        this.products.remove(product);
+        product.getOrganizations().remove(this);
+    }
 }

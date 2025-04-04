@@ -1,0 +1,583 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.4.xsd">
+
+    <changeSet id="20250404-01-product-data-insert" author="dataloader">
+        <comment>Insert initial sample product data</comment>
+        <insert tableName="products">
+            <column name="name" value="Paracetamol 500mg"/>
+            <column name="type" value="Medicine"/>
+            <column name="description" value="Pain reliever and fever reducer"/>
+            <column name="price" valueNumeric="150.00"/>
+            <column name="is_available" valueBoolean="true"/>
+            <column name="created_at" valueComputed="NOW()"/>
+        </insert>
+        <insert tableName="products">
+            <column name="name" value="Amoxicillin 250mg"/>
+            <column name="type" value="Medicine"/>
+            <column name="description" value="Antibiotic for bacterial infections"/>
+            <column name="price" valueNumeric="280.00"/>
+            <column name="is_available" valueBoolean="true"/>
+            <column name="created_at" valueComputed="NOW()"/>
+        </insert>
+        <insert tableName="products">
+            <column name="name" value="Vitamin C 1000mg"/>
+            <column name="type" value="Supplement"/>
+            <column name="description" value="Immune system booster"/>
+            <column name="price" valueNumeric="350.00"/>
+            <column name="is_available" valueBoolean="true"/>
+            <column name="created_at" valueComputed="NOW()"/>
+        </insert>
+        <insert tableName="products">
+            <column name="name" value="Ibuprofen 400mg"/>
+            <column name="type" value="Medicine"/>
+            <column name="description" value="Non-steroidal anti-inflammatory drug"/>
+            <column name="price" valueNumeric="200.00"/>
+            <column name="is_available" valueBoolean="true"/>
+            <column name="created_at" valueComputed="NOW()"/>
+        </insert>
+        <insert tableName="products">
+            <column name="name" value="Calcium + D3"/>
+            <column name="type" value="Supplement"/>
+            <column name="description" value="Bone health supplement"/>
+            <column name="price" valueNumeric="420.00"/>
+            <column name="is_available" valueBoolean="true"/>
+            <column name="created_at" valueComputed="NOW()"/>
+        </insert>
+        <insert tableName="products">
+            <column name="name" value="Cough Syrup 100ml"/>
+            <column name="type" value="Medicine"/>
+            <column name="description" value="For relief from dry cough"/>
+            <column name="price" valueNumeric="180.00"/>
+            <column name="is_available" valueBoolean="true"/>
+            <column name="created_at" valueComputed="NOW()"/>
+        </insert>
+        <insert tableName="products">
+            <column name="name" value="Multivitamin Tablets"/>
+            <column name="type" value="Supplement"/>
+            <column name="description" value="Daily nutritional supplement"/>
+            <column name="price" valueNumeric="450.00"/>
+            <column name="is_available" valueBoolean="true"/>
+            <column name="created_at" valueComputed="NOW()"/>
+        </insert>
+        <insert tableName="products">
+            <column name="name" value="Aspirin 100mg"/>
+            <column name="type" value="Medicine"/>
+            <column name="description" value="Blood thinner and pain reliever"/>
+            <column name="price" valueNumeric="120.00"/>
+            <column name="is_available" valueBoolean="true"/>
+            <column name="created_at" valueComputed="NOW()"/>
+        </insert>
+        <insert tableName="products">
+            <column name="name" value="Iron Tablets"/>
+            <column name="type" value="Supplement"/>
+            <column name="description" value="For iron deficiency anemia"/>
+            <column name="price" valueNumeric="250.00"/>
+            <column name="is_available" valueBoolean="true"/>
+            <column name="created_at" valueComputed="NOW()"/>
+        </insert>
+        <insert tableName="products">
+            <column name="name" value="Allergy Relief Tablets"/>
+            <column name="type" value="Medicine"/>
+            <column name="description" value="Antihistamine for allergies"/>
+            <column name="price" valueNumeric="320.00"/>
+            <column name="is_available" valueBoolean="true"/>
+            <column name="created_at" valueComputed="NOW()"/>
+        </insert>
+        <insert tableName="products">
+            <column name="name" value="Omeprazole 20mg"/>
+            <column name="type" value="Medicine"/>
+            <column name="description" value="For acid reflux and heartburn"/>
+            <column name="price" valueNumeric="380.00"/>
+            <column name="is_available" valueBoolean="true"/>
+            <column name="created_at" valueComputed="NOW()"/>
+        </insert>
+        <insert tableName="products">
+            <column name="name" value="B-Complex Vitamins"/>
+            <column name="type" value="Supplement"/>
+            <column name="description" value="B vitamins for energy metabolism"/>
+            <column name="price" valueNumeric="290.00"/>
+            <column name="is_available" valueBoolean="true"/>
+            <column name="created_at" valueComputed="NOW()"/>
+        </insert>
+        <insert tableName="products">
+            <column name="name" value="Zinc Lozenges"/>
+            <column name="type" value="Supplement"/>
+            <column name="description" value="Immune support supplement"/>
+            <column name="price" valueNumeric="180.00"/>
+            <column name="is_available" valueBoolean="true"/>
+            <column name="created_at" valueComputed="NOW()"/>
+        </insert>
+        <insert tableName="products">
+            <column name="name" value="Antibiotic Ointment"/>
+            <column name="type" value="Medicine"/>
+            <column name="description" value="Topical antibiotic for minor cuts"/>
+            <column name="price" valueNumeric="140.00"/>
+            <column name="is_available" valueBoolean="true"/>
+            <column name="created_at" valueComputed="NOW()"/>
+        </insert>
+        <insert tableName="products">
+            <column name="name" value="Hydrocortisone Cream"/>
+            <column name="type" value="Medicine"/>
+            <column name="description" value="For skin irritation and itching"/>
+            <column name="price" valueNumeric="210.00"/>
+            <column name="is_available" valueBoolean="true"/>
+            <column name="created_at" valueComputed="NOW()"/>
+        </insert>
+        <insert tableName="products">
+            <column name="name" value="Digestive Enzymes"/>
+            <column name="type" value="Supplement"/>
+            <column name="description" value="Aids in digestion"/>
+            <column name="price" valueNumeric="320.00"/>
+            <column name="is_available" valueBoolean="true"/>
+            <column name="created_at" valueComputed="NOW()"/>
+        </insert>
+        <insert tableName="products">
+            <column name="name" value="Laxative Pills"/>
+            <column name="type" value="Medicine"/>
+            <column name="description" value="For constipation relief"/>
+            <column name="price" valueNumeric="170.00"/>
+            <column name="is_available" valueBoolean="true"/>
+            <column name="created_at" valueComputed="NOW()"/>
+        </insert>
+        <insert tableName="products">
+            <column name="name" value="Antacid Tablets"/>
+            <column name="type" value="Medicine"/>
+            <column name="description" value="For heartburn and indigestion"/>
+            <column name="price" valueNumeric="130.00"/>
+            <column name="is_available" valueBoolean="true"/>
+            <column name="created_at" valueComputed="NOW()"/>
+        </insert>
+        <insert tableName="products">
+            <column name="name" value="Magnesium Supplements"/>
+            <column name="type" value="Supplement"/>
+            <column name="description" value="For muscle relaxation and sleep"/>
+            <column name="price" valueNumeric="280.00"/>
+            <column name="is_available" valueBoolean="true"/>
+            <column name="created_at" valueComputed="NOW()"/>
+        </insert>
+        <insert tableName="products">
+            <column name="name" value="Eye Drops"/>
+            <column name="type" value="Medicine"/>
+            <column name="description" value="For dry and irritated eyes"/>
+            <column name="price" valueNumeric="200.00"/>
+            <column name="is_available" valueBoolean="true"/>
+            <column name="created_at" valueComputed="NOW()"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="20250404-02-product-unit-types-insert" author="dataloader">
+        <comment>Insert unit types for products</comment>
+        <!-- Paracetamol -->
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="1"/>
+            <column name="unit_type" value="I"/>
+        </insert>
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="1"/>
+            <column name="unit_type" value="II"/>
+        </insert>
+
+        <!-- Amoxicillin -->
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="2"/>
+            <column name="unit_type" value="I"/>
+        </insert>
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="2"/>
+            <column name="unit_type" value="II"/>
+        </insert>
+
+        <!-- Vitamin C -->
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="3"/>
+            <column name="unit_type" value="I"/>
+        </insert>
+
+        <!-- Ibuprofen -->
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="4"/>
+            <column name="unit_type" value="I"/>
+        </insert>
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="4"/>
+            <column name="unit_type" value="II"/>
+        </insert>
+
+        <!-- Calcium -->
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="5"/>
+            <column name="unit_type" value="I"/>
+        </insert>
+
+        <!-- Cough Syrup -->
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="6"/>
+            <column name="unit_type" value="I"/>
+        </insert>
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="6"/>
+            <column name="unit_type" value="III"/>
+        </insert>
+
+        <!-- Multivitamin -->
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="7"/>
+            <column name="unit_type" value="I"/>
+        </insert>
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="7"/>
+            <column name="unit_type" value="II"/>
+        </insert>
+
+        <!-- Aspirin -->
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="8"/>
+            <column name="unit_type" value="I"/>
+        </insert>
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="8"/>
+            <column name="unit_type" value="II"/>
+        </insert>
+
+        <!-- Iron Tablets -->
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="9"/>
+            <column name="unit_type" value="I"/>
+        </insert>
+
+        <!-- Allergy Relief -->
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="10"/>
+            <column name="unit_type" value="I"/>
+        </insert>
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="10"/>
+            <column name="unit_type" value="II"/>
+        </insert>
+
+        <!-- Omeprazole -->
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="11"/>
+            <column name="unit_type" value="I"/>
+        </insert>
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="11"/>
+            <column name="unit_type" value="II"/>
+        </insert>
+
+        <!-- B-Complex -->
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="12"/>
+            <column name="unit_type" value="I"/>
+        </insert>
+
+        <!-- Zinc Lozenges -->
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="13"/>
+            <column name="unit_type" value="I"/>
+        </insert>
+
+        <!-- Antibiotic Ointment -->
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="14"/>
+            <column name="unit_type" value="III"/>
+        </insert>
+
+        <!-- Hydrocortisone Cream -->
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="15"/>
+            <column name="unit_type" value="III"/>
+        </insert>
+
+        <!-- Digestive Enzymes -->
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="16"/>
+            <column name="unit_type" value="I"/>
+        </insert>
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="16"/>
+            <column name="unit_type" value="II"/>
+        </insert>
+
+        <!-- Laxative Pills -->
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="17"/>
+            <column name="unit_type" value="I"/>
+        </insert>
+
+        <!-- Antacid Tablets -->
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="18"/>
+            <column name="unit_type" value="I"/>
+        </insert>
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="18"/>
+            <column name="unit_type" value="II"/>
+        </insert>
+
+        <!-- Magnesium Supplements -->
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="19"/>
+            <column name="unit_type" value="I"/>
+        </insert>
+
+        <!-- Eye Drops -->
+        <insert tableName="product_unit_types">
+            <column name="product_id" valueNumeric="20"/>
+            <column name="unit_type" value="III"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="20250404-03-product-batch-sizes-insert" author="dataloader">
+        <comment>Insert batch sizes for products</comment>
+        <!-- Paracetamol -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="1"/>
+            <column name="batch_size" value="100"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="1"/>
+            <column name="batch_size" value="500"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="1"/>
+            <column name="batch_size" value="1000"/>
+        </insert>
+
+        <!-- Amoxicillin -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="2"/>
+            <column name="batch_size" value="50"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="2"/>
+            <column name="batch_size" value="100"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="2"/>
+            <column name="batch_size" value="500"/>
+        </insert>
+
+        <!-- Vitamin C -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="3"/>
+            <column name="batch_size" value="30"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="3"/>
+            <column name="batch_size" value="60"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="3"/>
+            <column name="batch_size" value="90"/>
+        </insert>
+
+        <!-- Ibuprofen -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="4"/>
+            <column name="batch_size" value="100"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="4"/>
+            <column name="batch_size" value="200"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="4"/>
+            <column name="batch_size" value="500"/>
+        </insert>
+
+        <!-- Calcium -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="5"/>
+            <column name="batch_size" value="60"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="5"/>
+            <column name="batch_size" value="120"/>
+        </insert>
+
+        <!-- Cough Syrup -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="6"/>
+            <column name="batch_size" value="100"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="6"/>
+            <column name="batch_size" value="200"/>
+        </insert>
+
+        <!-- Multivitamin -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="7"/>
+            <column name="batch_size" value="30"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="7"/>
+            <column name="batch_size" value="60"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="7"/>
+            <column name="batch_size" value="90"/>
+        </insert>
+
+        <!-- Aspirin -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="8"/>
+            <column name="batch_size" value="100"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="8"/>
+            <column name="batch_size" value="200"/>
+        </insert>
+
+        <!-- Iron Tablets -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="9"/>
+            <column name="batch_size" value="60"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="9"/>
+            <column name="batch_size" value="120"/>
+        </insert>
+
+        <!-- Allergy Relief -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="10"/>
+            <column name="batch_size" value="30"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="10"/>
+            <column name="batch_size" value="60"/>
+        </insert>
+
+        <!-- Omeprazole -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="11"/>
+            <column name="batch_size" value="30"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="11"/>
+            <column name="batch_size" value="60"/>
+        </insert>
+
+        <!-- B-Complex -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="12"/>
+            <column name="batch_size" value="60"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="12"/>
+            <column name="batch_size" value="90"/>
+        </insert>
+
+        <!-- Zinc Lozenges -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="13"/>
+            <column name="batch_size" value="30"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="13"/>
+            <column name="batch_size" value="60"/>
+        </insert>
+
+        <!-- Antibiotic Ointment -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="14"/>
+            <column name="batch_size" value="10"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="14"/>
+            <column name="batch_size" value="20"/>
+        </insert>
+
+        <!-- Hydrocortisone Cream -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="15"/>
+            <column name="batch_size" value="30"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="15"/>
+            <column name="batch_size" value="50"/>
+        </insert>
+
+        <!-- Digestive Enzymes -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="16"/>
+            <column name="batch_size" value="30"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="16"/>
+            <column name="batch_size" value="60"/>
+        </insert>
+
+        <!-- Laxative Pills -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="17"/>
+            <column name="batch_size" value="30"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="17"/>
+            <column name="batch_size" value="60"/>
+        </insert>
+
+        <!-- Antacid Tablets -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="18"/>
+            <column name="batch_size" value="60"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="18"/>
+            <column name="batch_size" value="120"/>
+        </insert>
+
+        <!-- Magnesium Supplements -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="19"/>
+            <column name="batch_size" value="60"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="19"/>
+            <column name="batch_size" value="120"/>
+        </insert>
+
+        <!-- Eye Drops -->
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="20"/>
+            <column name="batch_size" value="15"/>
+        </insert>
+        <insert tableName="product_batch_sizes">
+            <column name="product_id" valueNumeric="20"/>
+            <column name="batch_size" value="30"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="20250404-04-add-created_at-to-organization_products" author="dataloader">
+        <comment>Add created_at column to organization_products table</comment>
+        <addColumn tableName="organization_products">
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="20250404-05-organization-products-insert" author="dataloader">
+        <comment>Assign products to organizations</comment>
+        <insert tableName="organization_products">
+            <column name="organization_id" valueNumeric="1"/>
+            <column name="product_id" valueNumeric="1"/>
+        </insert>
+        <insert tableName="organization_products">
+            <column name="organization_id" valueNumeric="1"/>
+            <column name="product_id" valueNumeric="3"/>
+        </insert>
+        <insert tableName="organization_products">
+            <column name="organization_id" valueNumeric="1"/>
+            <column name="product_id" valueNumeric="5"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

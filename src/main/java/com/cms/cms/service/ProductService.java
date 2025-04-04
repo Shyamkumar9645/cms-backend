@@ -6,28 +6,36 @@ import java.util.List;
 public interface ProductService {
     /**
      * Get all available products
-     * @return List of available products
      */
     List<Product> getAllAvailableProducts();
 
     /**
-     * Get available products by type
-     * @param type The product type
-     * @return List of available products of the specified type
+     * Get products available to a specific organization
      */
-    List<Product> getAvailableProductsByType(String type);
+    List<Product> getProductsForOrganization(Long orgId);
 
     /**
-     * Get available products by unit type
-     * @param unitType The unit type
-     * @return List of available products with the specified unit type
+     * Get all products not assigned to a specific organization
      */
-    List<Product> getAvailableProductsByUnitType(String unitType);
+    List<Product> getProductsNotInOrganization(Long orgId);
+
+    /**
+     * Search products not assigned to an organization
+     */
+    List<Product> searchProductsNotInOrganization(String searchTerm, Long orgId);
+
+    /**
+     * Add a product to an organization
+     */
+    void addProductToOrganization(Long orgId, Long productId);
+
+    /**
+     * Remove a product from an organization
+     */
+    void removeProductFromOrganization(Long orgId, Long productId);
 
     /**
      * Get a product by ID
-     * @param id The product ID
-     * @return The product if found, null otherwise
      */
     Product getProductById(Long id);
 }
