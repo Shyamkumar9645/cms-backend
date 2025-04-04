@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -83,14 +84,26 @@ class ProductServiceImpl implements ProductService {
         NewOrg org = orgOpt.get();
         Product product = productOpt.get();
 
+        // Initialize collections if null
+        if (org.getProducts() == null) {
+            org.setProducts(new HashSet<>());
+        }
+
+        if (product.getOrganizations() == null) {
+            product.setOrganizations(new HashSet<>());
+        }
+
         // Check if product is already assigned to organization
         if (org.getProducts().contains(product)) {
             logger.warn("Product with id: {} is already assigned to organization with id: {}", productId, orgId);
             return; // No need to add it again
         }
 
-        // Add the product to the organization
+        // Use the helper method to add the product to the organization
         org.addProduct(product);
+
+        // Save the organization (the relationship will be saved due to cascading)
+        logger.info("Saving organization with product");
         orgRepository.save(org);
 
         logger.info("Product with id: {} added to organization with id: {}", productId, orgId);

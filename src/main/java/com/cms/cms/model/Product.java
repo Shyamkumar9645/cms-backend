@@ -1,15 +1,23 @@
 package com.cms.cms.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.HashSet;
 
 @Entity
 @Table(name = "products")
-@Data
+@Getter
+@Setter
+@ToString(exclude = "organizations") // Exclude organizations from toString
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,7 +55,23 @@ public class Product {
     private LocalDateTime updatedAt;
 
     @ManyToMany(mappedBy = "products")
-    private Set<NewOrg> organizations;
+    @JsonIgnoreProperties("products")
+    private Set<NewOrg> organizations = new HashSet<>();
+
+    // Custom equals that doesn't use the organizations collection
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Product product = (Product) o;
+        return id != null && Objects.equals(id, product.id);
+    }
+
+    // Custom hashCode that doesn't use the organizations collection
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 
     @PrePersist
     protected void onCreate() {

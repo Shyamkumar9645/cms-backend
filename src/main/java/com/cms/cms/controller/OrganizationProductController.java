@@ -103,7 +103,12 @@ public class OrganizationProductController {
         logger.info("Adding product: {} to organization: {}", productId, orgId);
 
         try {
+            // Add more detailed logging
+            logger.info("Starting transaction to add product to organization");
+
             productService.addProductToOrganization(orgId, productId);
+
+            logger.info("Successfully added product: {} to organization: {}", productId, orgId);
 
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Product added to organization successfully");
@@ -112,7 +117,9 @@ public class OrganizationProductController {
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            logger.error("Error adding product to organization", e);
+            // Log the full stack trace
+            logger.error("Error adding product to organization: {}", e.getMessage(), e);
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(createErrorResponse("Error adding product: " + e.getMessage()));
         }

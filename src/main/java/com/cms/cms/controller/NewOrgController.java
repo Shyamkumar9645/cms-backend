@@ -1,5 +1,6 @@
 package com.cms.cms.controller;
 
+import com.cms.cms.dto.OrganizationDTO;
 import com.cms.cms.model.NewOrg;
 import com.cms.cms.service.NewOrgService;
 import jakarta.validation.Valid;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/new-org")
@@ -22,24 +24,32 @@ public class NewOrgController {
     @Autowired
     private NewOrgService newOrgService;
 
-    // Get all organizations
+    // Get all organizations - Using DTO pattern
     @GetMapping
-    public ResponseEntity<List<NewOrg>> getAllOrganizations() {
+    public ResponseEntity<List<OrganizationDTO>> getAllOrganizations() {
         try {
             List<NewOrg> organizations = newOrgService.getAllOrganizations();
-            return new ResponseEntity<>(organizations, HttpStatus.OK);
+
+            // Convert entities to DTOs
+            List<OrganizationDTO> orgDTOs = organizations.stream()
+                    .map(OrganizationDTO::fromEntity)
+                    .collect(Collectors.toList());
+
+            return new ResponseEntity<>(orgDTOs, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    // Get organization by ID
+    // Get organization by ID - Using DTO pattern
     @GetMapping("/{id}")
-    public ResponseEntity<NewOrg> getOrganizationById(@PathVariable Long id) {
+    public ResponseEntity<OrganizationDTO> getOrganizationById(@PathVariable Long id) {
         try {
             NewOrg org = newOrgService.getOrganizationById(id);
             if (org != null) {
-                return new ResponseEntity<>(org, HttpStatus.OK);
+                // Convert entity to DTO
+                OrganizationDTO orgDTO = OrganizationDTO.fromEntity(org);
+                return new ResponseEntity<>(orgDTO, HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
@@ -48,7 +58,7 @@ public class NewOrgController {
         }
     }
 
-    // Add this endpoint to NewOrgController
+    // Update organization
     @PutMapping("/{id}")
     public ResponseEntity<NewOrg> updateOrganization(@PathVariable Long id, @Valid @RequestBody NewOrg orgDetails) {
         try {
@@ -59,19 +69,18 @@ public class NewOrgController {
         }
     }
 
-    // Create new organization (your existing endpoint)
+    // Create new organization
     @PostMapping("/submit")
     public ResponseEntity<?> submitNewOrg(@Valid @RequestBody NewOrg newOrg) {
         try {
             NewOrg createdOrg = newOrgService.createNewOrg(newOrg);
-
-            return new ResponseEntity<>(createdOrg, HttpStatus.CREATED);  // Return 201 Created
-        } catch (Exception e) { // Catch any other exceptions
-            return new ResponseEntity<>("An error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR); // 500
+            return new ResponseEntity<>(createdOrg, HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<>("An error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    // Validation exception handler (your existing handler)
+    // Validation exception handler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public Map<String, String> handleValidationExceptions(

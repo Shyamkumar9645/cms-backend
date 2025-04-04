@@ -25,10 +25,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -53,15 +50,21 @@ public class OrgOrderController {
     @GetMapping("/available-products")
     public ResponseEntity<?> getAvailableProducts() {
         try {
-            logger.info("Fetching available products");
+            logger.info("Fetching available products for current organization");
 
-            // Get all available products
-            List<Product> availableProducts = productService.getAllAvailableProducts();
+            // Get current authenticated organization
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            OrganizationUserDetails userDetails = (OrganizationUserDetails) authentication.getPrincipal();
+            Integer orgId = userDetails.getOrgId();
+
+            logger.info("Retrieving products for organization ID: {}", orgId);
+
+            // Get products assigned to this organization
+            List<Product> availableProducts = productService.getProductsForOrganization(Long.valueOf(orgId));
 
             if (availableProducts.isEmpty()) {
-                // Create some sample products if none exist (for development/demo)
-                logger.info("No products found, returning sample products");
-                return ResponseEntity.ok(createSampleProducts());
+                logger.info("No products found for organization ID: {}", orgId);
+                return ResponseEntity.ok(Collections.emptyList());
             }
 
             // Convert Products to DTOs
@@ -69,7 +72,7 @@ public class OrgOrderController {
                     .map(this::convertToDTO)
                     .collect(Collectors.toList());
 
-            logger.info("Returning {} available products", productDTOs.size());
+            logger.info("Returning {} available products for organization ID: {}", productDTOs.size(), orgId);
             return ResponseEntity.ok(productDTOs);
 
         } catch (Exception e) {
@@ -78,7 +81,6 @@ public class OrgOrderController {
                     .body(createErrorResponse("Error fetching available products: " + e.getMessage()));
         }
     }
-
     /**
      * Submit a new order
      * This endpoint allows organizations to submit new orders with multiple items

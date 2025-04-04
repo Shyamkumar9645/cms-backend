@@ -1,19 +1,25 @@
 package com.cms.cms.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 @Entity
 @Table(name = "organizations")
-@Data
+@Getter
+@Setter
+@ToString(exclude = "products") // Exclude products from toString to prevent recursion
 public class NewOrg {
 
     @Id
@@ -90,23 +96,51 @@ public class NewOrg {
     @Column(name = "status")
     private String status;
 
-    // New relationship with products
+    // Add JsonIgnoreProperties to break circular reference for serialization
     @ManyToMany
     @JoinTable(
             name = "organization_products",
             joinColumns = @JoinColumn(name = "organization_id"),
             inverseJoinColumns = @JoinColumn(name = "product_id")
     )
+    @JsonIgnoreProperties("organizations")
     private Set<Product> products = new HashSet<>();
+
+    // Custom equals that doesn't use the products collection
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        NewOrg newOrg = (NewOrg) o;
+        return id != null && Objects.equals(id, newOrg.id);
+    }
+
+    // Custom hashCode that doesn't use the products collection
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 
     // Helper methods for managing the relationship
     public void addProduct(Product product) {
+        if (this.products == null) {
+            this.products = new HashSet<>();
+        }
         this.products.add(product);
+
+        if (product.getOrganizations() == null) {
+            product.setOrganizations(new HashSet<>());
+        }
         product.getOrganizations().add(this);
     }
 
     public void removeProduct(Product product) {
-        this.products.remove(product);
-        product.getOrganizations().remove(this);
+        if (this.products != null) {
+            this.products.remove(product);
+        }
+
+        if (product.getOrganizations() != null) {
+            product.getOrganizations().remove(this);
+        }
     }
 }
