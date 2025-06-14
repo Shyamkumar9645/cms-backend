@@ -149,4 +149,15 @@ class ProductServiceImpl implements ProductService {
         return productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
     }
+
+    public Product createProduct(Product request) {
+        Product product = new Product();
+        product.setName(request.getName());
+        product.setType(request.getType());
+        product.setUnitTypes(request.getUnitTypes()); // assuming it's a List<String>
+        product.setAvailableBatches(request.getAvailableBatches());
+
+        return productRepository.save(product);
+    }
+
 }

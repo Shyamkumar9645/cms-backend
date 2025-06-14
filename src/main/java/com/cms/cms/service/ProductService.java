@@ -38,4 +38,7 @@ public interface ProductService {
      * Get a product by ID
      */
     Product getProductById(Long id);
+
+      Product  createProduct(Product request) ;
+
 }

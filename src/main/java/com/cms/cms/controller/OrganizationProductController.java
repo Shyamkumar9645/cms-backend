@@ -58,6 +58,27 @@ public class OrganizationProductController {
         }
     }
 
+    @PostMapping("/admin/products")
+    public ResponseEntity<?> createProduct(@RequestBody Product productRequest) {
+        logger.info("Creating new product: {}", productRequest.getName());
+
+        try {
+            // Delegate to service to save the product
+            Product createdProduct = productService.createProduct(productRequest);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Product created successfully");
+            response.put("product", createdProduct);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
+        } catch (Exception e) {
+            logger.error("Error creating product", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("Error creating product: " + e.getMessage()));
+        }
+    }
+
     /**
      * Get products not assigned to an organization
      */
