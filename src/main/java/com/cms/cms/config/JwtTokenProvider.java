@@ -246,4 +246,25 @@ public class JwtTokenProvider {
     public interface UserDetailsWithOrg {
         Long getOrgId();
     }
+    public long validateTokenAndGetRemainingTime(String authToken) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(authToken)
+                    .getBody();
+
+            Date expiration = claims.getExpiration();
+            Date now = new Date();
+
+            // Return remaining time in milliseconds
+            return Math.max(0, expiration.getTime() - now.getTime());
+        } catch (ExpiredJwtException e) {
+            // Token is already expired
+            return 0;
+        } catch (Exception e) {
+            logger.error("JWT validation error: {}", e.getMessage());
+            return 0;
+        }
+    }
 }

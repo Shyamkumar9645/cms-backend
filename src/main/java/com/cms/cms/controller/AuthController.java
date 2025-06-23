@@ -3,6 +3,7 @@ package com.cms.cms.controller;
 import com.cms.cms.config.JwtTokenProvider;
 import com.cms.cms.model.JwtResponse;
 import com.cms.cms.model.LoginRequest;
+import com.cms.cms.service.TokenCacheService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -32,6 +33,9 @@ public class AuthController {
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    private TokenCacheService tokenCacheService;
 
     @Autowired
     @Qualifier("organizationUserDetailsService")
@@ -65,7 +69,9 @@ public class AuthController {
         // Create authentication and generate token
         String userType = determineUserType(userDetails);
         Authentication authentication = createAuthentication(userDetails);
-        String jwt = jwtTokenProvider.generateToken(authentication, userType);
+
+        // Generate token and cache it
+        String jwt = tokenCacheService.generateAndCacheToken(authentication, userType);
 
         logger.info("{} authentication successful for username: {}", userType, loginRequest.getUsername());
 
@@ -77,13 +83,6 @@ public class AuthController {
         ));
     }
 
-    /**
-     * Refresh token endpoint
-     * This endpoint creates a new JWT token if the refresh token is valid
-     *
-     * @param request The HTTP request containing the JWT token
-     * @return A new JWT token or an error response
-     */
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(HttpServletRequest request) {
         logger.info("Received token refresh request");
@@ -98,16 +97,29 @@ public class AuthController {
         }
 
         try {
-            // Check if token is valid but about to expire
+            // Check if token is blacklisted
+            if (tokenCacheService.isTokenBlacklisted(token)) {
+                logger.warn("Blacklisted token provided for refresh");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ErrorResponse("TOKEN_INVALID", "Token is invalid or expired"));
+            }
+
+            // Check if token is still valid
             if (!jwtTokenProvider.validateToken(token)) {
                 logger.warn("Invalid token provided for refresh");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ErrorResponse("TOKEN_INVALID", "Token is invalid or expired"));
             }
 
-            // Get username and user type from the token
-            String username = jwtTokenProvider.getUsernameFromToken(token);
-            String userType = jwtTokenProvider.getUserTypeFromToken(token);
+            // First try to get username from cache for better performance
+            String username = tokenCacheService.getUsernameFromCache(token);
+            String userType = tokenCacheService.getUserTypeFromCache(token);
+
+            // If not in cache, fallback to JWT extraction
+            if (username == null) {
+                username = jwtTokenProvider.getUsernameFromToken(token);
+                userType = jwtTokenProvider.getUserTypeFromToken(token);
+            }
 
             logger.info("Token valid for refresh, username: {}, userType: {}", username, userType);
 
@@ -121,12 +133,14 @@ public class AuthController {
 
             // Create a new authentication and generate a fresh token
             Authentication authentication = createAuthentication(userDetails);
-            String newToken = jwtTokenProvider.generateToken(authentication, userType);
+
+            // Blacklist the old token
+            tokenCacheService.blacklistToken(token);
+
+            // Generate and cache new token
+            String newToken = tokenCacheService.generateAndCacheToken(authentication, userType);
 
             logger.info("Token refresh successful for user: {}", username);
-
-            // Optional: Blacklist the old token
-            // jwtTokenProvider.blacklistToken(token);
 
             // Return new token
             return ResponseEntity.ok(new JwtResponse(
@@ -143,13 +157,6 @@ public class AuthController {
         }
     }
 
-    /**
-     * Verify token endpoint
-     * This endpoint checks if a token is valid and returns user information
-     *
-     * @param request The HTTP request containing the JWT token
-     * @return User information or an error response
-     */
     @GetMapping("/verify")
     public ResponseEntity<?> verifyToken(HttpServletRequest request) {
         logger.info("Received token verification request");
@@ -164,16 +171,34 @@ public class AuthController {
         }
 
         try {
-            // Validate token
-            if (!jwtTokenProvider.validateToken(token)) {
+            // Check if token is blacklisted
+            if (tokenCacheService.isTokenBlacklisted(token)) {
+                logger.warn("Blacklisted token provided for verification");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ErrorResponse("TOKEN_INVALID", "Token is invalid or expired"));
+            }
+
+            // Check if token is in cache first (faster verification)
+            boolean isTokenCached = tokenCacheService.isTokenCached(token);
+
+            // If not in cache, validate using JWT verification
+            if (!isTokenCached && !jwtTokenProvider.validateToken(token)) {
                 logger.warn("Invalid token provided for verification");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ErrorResponse("TOKEN_INVALID", "Token is invalid or expired"));
             }
 
-            // Extract information from token
-            String username = jwtTokenProvider.getUsernameFromToken(token);
-            String userType = jwtTokenProvider.getUserTypeFromToken(token);
+            // Try to get information from cache first
+            String username = tokenCacheService.getUsernameFromCache(token);
+            String userType = tokenCacheService.getUserTypeFromCache(token);
+
+            // If not in cache, extract from JWT
+            if (username == null) {
+                username = jwtTokenProvider.getUsernameFromToken(token);
+                userType = jwtTokenProvider.getUserTypeFromToken(token);
+            }
+
+            // Get expiration date from JWT
             Date expirationDate = jwtTokenProvider.getExpirationDateFromToken(token);
 
             logger.info("Token valid, username: {}, userType: {}, expires: {}",
@@ -185,6 +210,7 @@ public class AuthController {
             response.put("userType", userType);
             response.put("expires", expirationDate.getTime());
             response.put("isValid", true);
+            response.put("isCached", isTokenCached);
 
             return ResponseEntity.ok(response);
 
@@ -195,13 +221,6 @@ public class AuthController {
         }
     }
 
-    /**
-     * Endpoint for logging out users
-     * This endpoint doesn't need authentication since users might be logging out with expired tokens
-     *
-     * @param request The HTTP request containing the JWT token
-     * @return Response with logout status
-     */
     @PostMapping("/logout")
     public ResponseEntity<?> logoutUser(HttpServletRequest request) {
         String jwt = getJwtFromRequest(request);
@@ -210,21 +229,23 @@ public class AuthController {
         // Clear the security context regardless of token
         SecurityContextHolder.clearContext();
 
-        // If token is present, add it to a blacklist
+        // If token is present, add it to the blacklist
         if (jwt != null && !jwt.isEmpty()) {
             try {
-                // Even if token validation fails, we still want to log the user out
                 // Extract username if possible for logging purposes
                 String username = null;
                 try {
-                    username = jwtTokenProvider.getUsernameFromToken(jwt);
+                    username = tokenCacheService.getUsernameFromCache(jwt);
+                    if (username == null) {
+                        username = jwtTokenProvider.getUsernameFromToken(jwt);
+                    }
                     logger.info("Logging out user: {}", username);
                 } catch (Exception e) {
                     logger.warn("Could not extract username from token during logout");
                 }
 
-                // Add token to blacklist in JwtTokenProvider if implemented
-                jwtTokenProvider.blacklistToken(jwt);
+                // Blacklist the token
+                tokenCacheService.blacklistToken(jwt);
 
                 logger.info("User successfully logged out");
                 return ResponseEntity.ok(createSuccessResponse("Logged out successfully"));
@@ -239,9 +260,7 @@ public class AuthController {
         return ResponseEntity.ok(createSuccessResponse("Logged out"));
     }
 
-    /**
-     * Extract JWT from request
-     */
+    // Helper methods remain the same
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
@@ -250,9 +269,6 @@ public class AuthController {
         return null;
     }
 
-    /**
-     * Create a success response object
-     */
     private Map<String, String> createSuccessResponse(String message) {
         Map<String, String> response = new HashMap<>();
         response.put("message", message);
@@ -260,9 +276,6 @@ public class AuthController {
         return response;
     }
 
-    /**
-     * Find user details by trying organization and admin services
-     */
     private UserDetails findUserDetails(String username) {
         try {
             logger.debug("Trying to find organization user: {}", username);
@@ -278,9 +291,6 @@ public class AuthController {
         }
     }
 
-    /**
-     * Determine user type based on the service that provided the user details
-     */
     private String determineUserType(UserDetails userDetails) {
         // This can be improved by checking authorities or class type
         // For now, we'll use a simple check based on the same logic as before
@@ -292,9 +302,6 @@ public class AuthController {
         }
     }
 
-    /**
-     * Create authentication token and set in security context
-     */
     private Authentication createAuthentication(UserDetails userDetails) {
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 userDetails, null, userDetails.getAuthorities());

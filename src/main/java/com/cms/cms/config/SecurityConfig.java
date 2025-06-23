@@ -39,7 +39,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationEntryPoint jwtAuthEntryPoint;
 
-    @Value("${app.frontend.url:https://cms-production-705d.up.railway.app}")
+    @Value("${app.frontend.url:http://localhost:3000}")
     private String frontendUrl;
 
     /**

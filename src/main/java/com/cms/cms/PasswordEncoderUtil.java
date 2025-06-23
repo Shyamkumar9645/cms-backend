@@ -14,7 +14,7 @@ public class PasswordEncoderUtil {
 
         // Passwords to encode
         String[] passwords = {
-                "admin1"
+                "admin"
         };
 
         System.out.println("Encoded Passwords:");
